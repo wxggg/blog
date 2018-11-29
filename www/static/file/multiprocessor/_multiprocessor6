@@ -1,0 +1,120 @@
+# Universality of Consensus
+>written by Xingang Wang in Jan/2018
+
+universal
+* given sufficiently many of them, one can construct a wait-free linearizable implementation of any concurrent object
+* A class is universal in a system of n threads if, and only if it has a consensus number greater than or equal to n
+* compareAndSet()
+
+## Universality
+>A class C is universal if one can construct a wait-free implementation of any object from some number of objects of C and some number of read–write registers.
+
+## A Lock-Free Universal Construction
+>lock-free: infinitely often some method call finishes.
+
+>1.Lock-free means we need to worry what happens if a thread stops in the middle \
+>2.Threads use one-time consensus object to decide which node goes next\
+>3.Threads update actual next field to reflect consensus outcome
+
+* A log:
+  + a linked list of the method calls
+* new method call
+  + find end of list
+  + atomically append call
+  + compute response by replaying log
+
+```java
+public class LFUniversal {
+    private Node[] head;
+    private Node tail;
+    public LFUniversal() {
+        this.tail = new Node();
+        this.tail.seq = 1;
+        for(int i=0; i<n; i++)
+            head[i] = tail;
+    }
+    public Response apply(Invocation invoc) {
+        int i= ThreadID.get();
+        Node prefer = new Node(invoc);
+        while (prefer.seq == 0) {
+            Node before = Node.max(head);
+            Node after = before.decideNext.decide(prefer);
+            before.next = after;
+            after.seq = before.seq + 1;
+            head[i] = after;
+        }
+        SeqObject myObject = new SeqObject();
+        Node current = tail.next;
+        while (current != prefer) {
+            myObject.apply(invoc);
+            current = current.next;
+        }
+        return myObject.apply(current.invoc);
+    }
+}
+```
+>analyze: \
+1.A thread attempting to call apply() -> Node(invoc) \
+2.nodes to the head of the log by running an n-thread consensus protocol to agree which node was appended to the log \
+3.result is the unique winning node \
+4.The seq field is the node’s sequence number in the list. This field is zero while the node is not yet threaded onto the list
+
+* linearizable
+  >The construction is a linearizable implementation of the sequential object. Each apply() call can be linearized at the point of the consensus call adding the node to the log
+
+* wait-free
+  >The new head node always eventually appears in head[]. It follows that the only way a thread can repeatedly fail to add its own node to the log is if other threads repeatedly succeed in appending their own nodes to the log. Thus, a node can starve only if other nodes are continually completing their invocations, implying that the construction is lock-free
+
+
+## A Wait-Free Universal Construction
+>wait-free: each method call takes a finite number of steps to finish
+* must guarantee that every thread completes an apply() call within a finite number of steps, that is, no thread starves
+
+```java
+public class Universal {
+    private Node[] announce; // array added to coordinate helping
+    private Node[] head;
+    private Node tail;
+    public Universal() {
+        tail = new node();
+        tail.seq = 1;
+        for (int j = 0; j < n; j++) {
+            head[j] = tail;
+            announce[j] = tail;
+        }
+    }
+
+    public Response apply(Invoc invoc) {
+        int i = ThreadID.get();
+        announce[i] = new Node(invoc);
+        head[i] = Node.max(head);
+        while (announce[i].seq == 0) {
+            Node before = head[i];
+            if (help.seq == 0)
+                prefer = help;
+            else
+                prefer = announce[i];
+            Node after = before.decideNext.decide(prefer);
+            before.next = after;
+            after.seq = before.seq + 1;
+            head[i] = after;
+        }
+        SeqObject MyObject = new SeqObject();
+        Node current = tail.next;
+        while (current != announce[i]) {
+            MyObject.apply(current.invoc);
+            current = current.next;
+        }
+        head[i] = announce[i];
+        return MyObject.apply(current.invoc);
+    }
+}
+```
+>analyze: \
+1.a thread first announces its new node. This step ensures that if the thread itself does not succeed in appending its node onto the list, some other thread will append that node on its behalf \
+2.A thread first checks to see if there is a node that needs help ahead of it in the announce[] array
+
+* Linearizability
+  >Linearizability follows because no node is ever added twice, and the order in which nodes are appended to the log is clearly compatible with the natural partial order of the corresponding method calls
+* wait-free
+  > guarantee that any node that is announced is eventually added to the head[] array (implying that it is in the log) and the announcing thread can complete computation of its outcome

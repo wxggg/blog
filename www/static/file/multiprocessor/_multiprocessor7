@@ -1,0 +1,282 @@
+# Locks In Real World
+> wirrten by Xingang Wang in Jan/2018
+
+There are many aspects that can affect the locks and synchronization, and much of it is caused by some architecture feature such as several processors accessing memory or instruction reorder. And the Peterson algorithm might be wrong just because the instruction reorder.
+
+Accessing memory order:
+* visit the processor's own cache -> `cache hit`
+* if `cache miss`: broadcasts the address to bus
+* if some other processor hit the address, then it respondse the value and address by bus
+* if not, read from memory
+* not in memory, ->pagefault
+***
+
+## TAS and TTAS Lock
+* TAS : test and set
+* TAS : test and test and set
+
+TAS and TTAS Lock are two lock implementation with the use of `getAndSet()` method, which is an atomic method can be used as `state.getAndSet(true)`. The call will exchange the state value and true, but it is only effective if and only if state is not true. This method might refer to the hardware exchange instruction.
+### TAS
+The TAS Lock keeps call the method `state.getAndSet(true)`, and the method is expensive, so if we use it more, the more time it will cost. The TAS keeps call it, so it is quite expensive.
+```java
+public class TASLock implements Lock{
+    AtomicBoolean state = new AtomicBoolean(false);
+
+    @Override
+    public void lock() {
+        while (state.getAndSet(true)) {}
+    }
+    @Override
+    public void unlock() {
+        state.set(false);
+    }
+}
+```
+### getAndSet()
+* TAS Lock performs poorly because of getAndSet()
+* broadcast on the bus
+* > all threads must use the bus to communicate with memory
+* delay all threads
+* force other processors to discard their own copies of the lock, so every spinning thread encounters a `cache miss`
+* the thread trying to release the lock might be delayed because the bus is monipolized by other spinned threads
+### TTAS
+The TTAS is different, and the mainly stuck part is `state.get()` operation, which costs less time to finish, so the TTAS Lock is much more efficient than TAS.
+```java
+public class TTAS implements Lock{
+    AtomicBoolean state = new AtomicBoolean(false);
+
+    @Override
+    public void lock() {
+        while (true) {
+            while (state.get()){}
+            if (! state.getAndSet(true)) return;
+        }
+    }
+    @Override
+    public void unlock() {
+        state.set(false);
+    }
+}
+```
+* thread A held lock, the first time B reads the lock cause a `cache miss`
+* then B repeatedly reads the value, `cache hits`
+* B produces no bus traffic
+* A will not be delayed because the bus has no traffic
+
+Here are something quoted from chapter 7 of the book `<The Art of Multiprocessor Programming>`:
+>For simplicity, we consider a typical multiprocessor architecture in which processors communicate by a shared broadcast medium called a bus (like a tiny Ethernet). Both the processors and the memory controller can broadcast on the bus, but only one processor (or memory) can broadcast on the bus at a time. All processors (andmemory) can listen. Today, bus-based architectures are common because they are easy to build, although they scale poorly to large numbers of processors.
+
+>Each processor has a cache, a small high-speed memory where the processor keeps data likely to be of interest. A memory access typically requires orders of magnitude more machine cycles than a cache access. Technology trends are not helping: it is unlikely that memory access times will catch up with processor cycle times in the near future, so cache performance is critical to the overall performance of a multiprocessor architecture.
+
+>When a processor reads from an address in memory, it first checks whether that address and its contents are present in its cache. If so, then the processor has a `cache hit`, and can load the value immediately. If not, then the processor has a `cache miss`, and must find the data either in the memory, or in another processor’s cache. The processor then broadcasts the address on the bus. The other processors snoop on the bus. If one processor has that address in its cache, then it responds by broadcasting the address and value. If no processor has that address, then the memory itself responds with the value at that address.
+
+> _Notice:_ This notion of _local spinning_, where threads repeatedly reread cached values instead of repeatedly using the bus, is an important principle critical to the design of efficient spin locks.
+
+### backoff lock
+We can let the thread backoff some time if it doesn't get the lock, this will reduce the bus traffic.But backoff can also cause some problems:
+* _Cache-Coherence Traffic_: all threads spin on the same shared location causing traffic on every successful lock access
+* _Critical Section Underutilization_: threads delay longer.
+
+## Array-Based Lock
+In ALock, the mySlotIndex is `ThreadLocal` variables, different from regular variables.
+* each thread has its own and independently initialized copy of each variable
+* no need to stored in shared memory
+* no need for synchronization
+* do not generate coherence traffic because accessed by only one thread
+
+```java
+public class ALock implements Lock{
+    ThreadLocal<Integer> mySlotIndex = new ThreadLocal<Integer>();
+    protected Integer initialValue() { return 0; };
+    AtomicInteger tail;
+    boolean[] flag;
+    int size;
+
+    public ALock(int capacity) {
+        size = capacity;
+        tail = new AtomicInteger(0);
+        flag = new boolean[capacity];
+        flag[0] = true;
+    }
+    @Override
+    public void lock() {
+        int slot = tail.getAndIncrement() % size;
+        mySlotIndex.set(slot);
+        while(! flag[slot]) {};
+    }
+    @Override
+    public void unlock() {
+        int slot = mySlotIndex.get();
+        flag[slot] = false;
+        flag[(slot+1) % size] = true;
+    }
+}
+```
+> do not require synchronization, and do not generate any coherence traffic since they are accessed by only one thread. The value of a thread-local variable is accessed by get() and set() methods.
+
+>The flag[] array, on the other hand, is shared. However, contention on the array locations is minimized since each thread, at any given time, spins on its locally cached copy of a single array location, greatly reducing invalidation traffic.
+
+### property
+* no starvations
+* first-come-first-served
+* not space-efficient
+### false sharing
+> which occurs when adjacent data items (such as array elements) share a single cache line. A write to one item invalidates that item’s cache line, which causes invalidation traffic to processors that are spinning on unchanged but near items that happen to fall in the same cache line.
+
+
+## CLHLock
+this list that stores lock information is virtual,implicit.
+### analyze
+>1.initially tail get a Node(flag==false) \
+2.A get the taileNode and set the tail to A's own node(flag==true) \
+3.if B wants to get lock, B get A's node, and spin until A's node flag==false \
+4.A unlock, set A's node flag=false, and A's node get tail's node.
+```java
+public class CLHLock implements Lock{
+    AtomicReference<QNode> tail;
+    ThreadLocal<QNode> myPred;
+    ThreadLocal<QNode> myNode;
+
+    public CLHLock() {
+        tail = new AtomicReference<QNode>(new QNode());
+        myNode = new ThreadLocal<QNode>() { protected QNode initialValue() { return new QNode();}};
+        myPred = new ThreadLocal<QNode>() { protected QNode initialValue() { return null;}};
+    }
+
+    @Override
+    public void lock() {
+        QNode qnode = myNode.get();
+        qnode.locked = true;
+        QNode pred = tail.getAndSet(qnode);
+        myPred.set(pred);
+        while(pred.locked) {}
+    }
+    @Override
+    public void unlock() {
+        QNode qnode = myNode.get();
+        qnode.locked = false;
+        myNode.set(myPred.get());
+    }
+
+    public class QNode {
+        boolean locked = false;
+        QNode next = null;
+    }
+}
+```
+### feature
+* this algorithm has each thread spin on a distinct location
+* when one thread releases its lock, it invalidates only its successor’s cache
+* first-come-first-served fairness
+* performs poorly on NUMA systems, because every spinning thread is waiting its predecessor, if this memory location is remote, the performance suffers.
+
+## MCS Lock
+the lock list is explicit
+### analyze
+>1.initially tail==null \
+2.A lock, and set tail=ANode, pred get tail(null), and get the lock \
+3.B lock, set tail=BNode, pred get ANode, and spin for qnode.locked==true \
+4.A unlock, ANode.next is BNode, not null, so set BNode.locked==false, so that BNode can keep going, and make ANode=null
+```java
+public class MCSLock implements Lock{
+    AtomicReference<QNode> tail;
+    ThreadLocal<QNode> myNode;
+
+    public MCSLock() {
+        tail = new AtomicReference<QNode>(null);
+        myNode = new ThreadLocal<QNode>() { protected QNode initialValue() { return new QNode();}};
+    }
+
+    @Override
+    public void lock() {
+        QNode qnode = myNode.get();
+        QNode pred = tail.getAndSet(qnode);
+        if(pred != null) {
+            qnode.locked = true;
+            pred.next = qnode;
+            while(qnode.locked) {}
+        }
+    }
+    @Override
+    public void unlock() {
+        QNode qNode = myNode.get();
+        if(qNode.next == null) {
+            if(tail.compareAndSet(qNode, null)) return;
+            while(qNode.next == null) {}
+        }
+        qNode.next.locked = false;
+        qNode.next = null;
+    }
+
+    public class QNode {
+        boolean locked = false;
+        QNode next = null;
+    }
+}
+```
+### feature
+* shares the advantages of the CLHLock, each lock release invalidates only the successor’s cache entry
+* better suited to cache-less NUMA architectures because each thread controls the location on which it spins
+* drawback1: releasing a lock requires spinning
+* drawback2: requires more reads, writes, and compareAndSet() calls than the CLHLock algorithm
+
+## A Queue Lock with Timeouts
+### analyze
+>1.initially tail == null \
+2.A tryLock, set tail=Anode, and myPred=tail(null), get lock \
+3.B tryLock, set tail=Bnode, and myPred=Anode, Anode!=null && Anode != AVAILABLE, so B spins times \
+4.if times out return false, and compare Bnode==tail, set Bnode.pred=Anode \
+5.if times not out and satisfy myPred(Anode==null) or myPred(Anode).pred(null) == AVAILABLE , oh not satisfied yet \
+6.A unlock and set tail=null and set Anode.pred=AVAILABLE so step5 satisfy, and B can get lock
+```java
+public class TOLock implements Lock {
+    static QNode AVAILABLE = new QNode();
+    AtomicReference<QNode> tail;
+    ThreadLocal<QNode> myNode;
+    public TOLock() {
+        tail = new AtomicReference<QNode>(null);
+        myNode = new ThreadLocal<QNode>() {
+            protected QNode initialValue() {
+                return new QNode();
+            }
+        };
+    }
+
+    public boolean tryLock(long time, TimeUnit unit) throws InterruptedException {
+        long startTime = System.currentTimeMillis();
+        long patience = TimeUnit.MILLISECONDS.convert(time, unit);
+        QNode qnode = new QNode();
+        myNode.set(qnode);
+        qnode.pred = null;
+        QNode myPred = tail.getAndSet(qnode);
+        if (myPred == null || myPred.pred == AVAILABLE)
+            return true;
+        while (System.currentTimeMillis() - startTime < patience) {
+            QNode predPred = myPred.pred;
+            if (predPred == AVAILABLE)
+                return true;
+            else if (predPred != null)
+                myPred = predPred;
+        }
+        if (!tail.compareAndSet(qnode, myPred))
+            qnode.pred = myPred;
+        return false;
+    }
+
+    @Override
+    public void unlock() {
+        QNode qnode = myNode.get();
+        if(!tail.compareAndSet(qnode, null))
+            qnode.pred = AVAILABLE;
+    }
+
+    static public class QNode {
+        public QNode pred = null;
+    }
+}
+```
+### feature
+* has many of the advantages of the original CLHLock: local spinning on a cached location and quick detection that the lock is free
+* It also has the wait-free timeout property of the BackoffLock.
+* drawback1: the need to allocate a new node per lock access
+* drawback2: a thread spinning on the lock may have to go up a chain of timed-out nodes before it can access the critical section.

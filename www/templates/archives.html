@@ -1,0 +1,52 @@
+{% extends '__base__.html' %}
+
+{% block title %}{{name}} / {% endblock %}
+
+{% block beforehead %}
+
+<script>
+</script>
+
+{% endblock %}
+
+{% block content %}
+
+<div class="uk-grid" data-uk-grid-margin="" style="background-color:#fff">
+  <div class="uk-width-medium-2-10 uk-hidden-small">
+    <p></p>
+  </div>
+  <div class="uk-width-medium-6-10">
+      <div class="uk-grid">
+
+        <div class="uk-panel" >
+          <h2 class="">文章归档</h2>
+          <ul class="">
+            {{ archive_content|safe }}
+          </ul>
+        </div>
+
+        <div class="uk-panel">
+          <h2 class="">标签</h2>
+            {{ tag_content|safe }}
+        </div>
+
+        <div class="uk-panel" >
+          <h2 class="">近期文章</h2>
+          <ul class="">
+            {{ recent_content|safe }}
+          </ul>
+        </div>
+
+
+      </div>
+  </div>
+  <div class="uk-width-medium-2-10 uk-hidden-small">
+    <div class="" style="position:fixed;right:1%;top:88%;z-index:100"  >
+      <div class="uk-button-group">
+          <a class="uk-button back-to-top" href="#" uk-totop data-uk-smooth-scroll><i class="uk-icon-arrow-up"></i></a>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

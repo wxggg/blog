@@ -1,0 +1,41 @@
+{% extends '__base__.html' %}
+
+{% block title %}{% endblock %}
+
+{% block beforehead %}
+<script type="text/javascript">
+
+</script>
+{% endblock %}
+
+{% block content %}
+
+
+
+
+<div class="uk-grid uk-animation-fade" data-uk-grid-margin="" style="background-color:#fff; ">
+  <div class="uk-width-medium-2-10 uk-hidden-small" >
+    <p></p>
+  </div>
+  <div class="uk-width-medium-6-10">
+      <div class="uk-grid" style="margin-top:20px">
+          {{ html_content|safe }}
+      </div>
+
+
+      <div class="" style="position:fixed;right:2%;top:90%;">
+        <div class="uk-button-group" style="">
+          <a class="uk-button" href="/?page=prior"><i class="uk-icon-arrow-left"></i></a>
+          <!-- <a class="uk-button back-to-top" href="#" uk-totop data-uk-smooth-scroll><i class="uk-icon-arrow-up"></i></a> -->
+
+          <a class="uk-button" href="/?page=next" ><i class="uk-icon-arrow-right"></i></a>
+        </div>
+      </div>
+  </div>
+  <div class="uk-width-medium-2-10 uk-hidden-small">
+    <p></p>
+  </div>
+</div>
+
+
+{% endblock %}

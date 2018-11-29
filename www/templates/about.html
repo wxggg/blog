@@ -1,0 +1,52 @@
+{% extends '__base__.html' %}
+
+{% block title %}{{name}} / {% endblock %}
+
+{% block beforehead %}
+
+<script>
+</script>
+
+{% endblock %}
+
+{% block content %}
+
+<div class="uk-grid" data-uk-grid-margin="" style="background-color:#fff">
+	<div class="uk-width-medium-2-10 uk-hidden-small">
+		<p></p>
+	</div>
+	<div class="uk-width-medium-6-10">
+
+		<article class="uk-article">
+			<h2>Wang Xingang</h2>
+			<p>hello，this is sharix！</p>
+			<h2>Experience</h2>
+			<p>Bachelor: <a href="http://english.hust.edu.cn/">hust</a> from 2013 to 2017</p>
+			<p>Master: <a href="http://english.is.cas.cn/">iscas</a> from 2017 to now</p>
+			<h2>Contact</h2>
+			<p>Gmail: wxg15527063842@gmail.com</p>
+			<h2>友情链接</h3>
+				<ul>
+					<li><a target="_blank" href="http://tanyihao.me/">谭浩的博客</a></li>
+					<li><a target="_blank" href="https://wxg.gitbook.io/sharix/">A simple os sharix</a></li>
+					<li><a target="_blank" href="https://wxg.gitbook.io/linux/">about linux</a></li>
+				</ul>
+				<h2>标签</h2>
+				{{ tag_content|safe }}
+				<h2>近期文章</h2>
+				<ul class="">
+					{{ recent_content|safe }}
+				</ul>
+		</article>
+
+	</div>
+	<div class="uk-width-medium-2-10 uk-hidden-small">
+		<div class="" style="position:fixed;right:1%;top:88%;z-index:100">
+			<div class="uk-button-group">
+				<a class="uk-button back-to-top" href="#" uk-totop data-uk-smooth-scroll><i class="uk-icon-arrow-up"></i></a>
+			</div>
+		</div>
+	</div>
+</div>
+
+{% endblock %}

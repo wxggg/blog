@@ -1,0 +1,31 @@
+If you want to alter some feature of the kernel, then you will have to change the source or configure of linux kernel before compiling it. Here is some steps to do this. I will take linux-4.3 as an example.
+
+### Get a distribution of linux kernel source code.
+You can get any version from github. Then here's some software you'll have to install.
+```shell
+$sudo apt-get update
+$sudo apt-get install git fakeroot build-essential  ncurses-dev xz-utils libssl-dev bc
+$cd linux-4.3
+```
+
+## Configuring and Compiling
+There is an easy way to do the configure, which is to copy your own configure to the directory.
+```shell
+$cp  /boot/config-*(uname -r) .config
+$make menuconfig
+$sudo make -j 4
+$sudo make modules_install -j 4 && sudo make install -j 4
+```
+
+> If your host system is 64bit, then it is fine to do just `make menuconfig`, and you will compile a 64bit kernel finally. When you need to compile a 64bit on a 32bit system, then it is necessary to do `make ARCH=x86_64 menuconfig`
+
+## Final steps
+After the compile and install, we should choose to use the new kernel the next time we boot up.
+```shell
+$update-initramfs -c -k 4.3
+```
+And then use the following command to look for the kernels present in the boot folder. And update grub file
+```shell
+$update-grub
+```
+And then restart your system,and choose which kernel you use before start linux, use `uname -r` to show which  kernel you are using

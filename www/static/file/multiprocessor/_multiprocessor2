@@ -1,0 +1,228 @@
+# Baic Lock Algorithm
+> written by Xingang Wang in Dec/2017
+
+This series is mainly about something on the book `<The Art of Multiprocessor Programming>`
+
+***
+## Mutual Exclusion
+>Proof: By contradiction \
+1.Assume CSAj overlaps CSBk \
+2.Consider each thread's last (j-th and k-th) read and write in the lock() method before entering CS \
+3.Derive a contradiction
+
+## LockOne
+* have mutex property
+> Proof: \
+Assume A and B in CS: \
+read_A(flag[B]==false) => write_A(flag[A]=true) \
+read_B(flag[A]==false) => write_B(flag[B]=true) \
+contradiction with the code
+* may cause deadlock
+>write_A(flag[A]=true) and write_B(flag[B]=true) \
+then: read_A(flag[B]==true) and read_B(flag[B]==true) \
+cause deadlock
+```java
+public class LockOne implements Lock{
+    private boolean[] flag = new boolean[2];
+
+    @Override
+    public void lock() {
+        int i = ThreadID.get();
+        int j = 1 - i;
+        flag[i] = true;
+        try { // to sleep 1s can make it clear that this will cause deadlock
+            Thread.sleep(1000);
+        } catch (Exception e) {
+            //TODO: handle exception
+        }
+        while(flag[j]) {} // wait
+    }
+
+    @Override
+    public void unlock() {
+        int i = ThreadID.get();
+        flag[i] = false;
+    }
+}
+```
+>The LockOne algorithm is inadequate because it deadlocks if thread executions are interleaved. If writeA(flag[A] = true) and writeB(flag[B] = true) events occur before readA(flag[B]) and readB(flag[A]) events, then both threads wait forever. Nevertheless, LockOne has an interesting property: if one thread runs before the other, no deadlock occurs, and all is well.
+
+## LockTwo
+* have mutex property
+>Proof: \
+1.Assume A and B in CS \
+2.write_A(victim=A) -> write_B(victim=B) \ ->read_A(victim==B) so A can in \
+3.but then victim is set to B and B cannot in, cause contradict.
+* may cause deadlock
+>A lock() -> unlock() -> write_B(victim=B) -> B deadlock
+
+```java
+public class LockTwo implements Lock{
+    private int victim;
+
+    @Override
+    public void lock() {
+        int i = ThreadID.get();
+        victim = i; // let other go first
+        while (victim == i) {}
+    }
+    @Override
+    public void unlock() {
+        victim = ThreadID.get();
+    }
+}
+```
+>The LockTwo class is inadequate because it deadlocks if one thread runs completely ahead of the other. Nevertheless, LockTwo has an  interesting property: if the threads run concurrently, the lock() method succeeds. The LockOne and LockTwo classes complement one another: each succeeds under conditions
+that cause the other to deadlock.
+
+## Peteson Lock
+* mutex property
+>Proof: \
+1.assume A and B in CS \
+2.if A in CS means: flag[B]==false or victim==B \
+write_A(flag[A]=true) -> write_A(victim=A) -> write_B(victim=B) -> read_A(flag[B]) -> read_A(victim != A) -> A in CS \
+3.B have write_B(victim=B) and victim will still be B, so B not in
+4.contradiction
+* starvation-free
+>Proof: \
+1.assume A runs forever in while of lock \
+2.then B must be reentering the CS again and again, and B will write_B(victim=B)
+3.but A runs forever means victim==A forever, contradiction
+* deadlock-free
+
+```java
+public class Peterson implements Lock{
+    private boolean[] flag = new boolean[2];
+    private int victim;
+
+    @Override
+    public void lock() {
+        int i = ThreadID.get();
+        int j = 1 - i;
+        flag[i] = true;
+        victim = i;
+        while(flag[j] && victim == i) {}
+    }
+    @Override
+    public void unlock() {
+        int i = ThreadID.get();
+        flag[i] = false;
+    }
+}
+```
+There's bug if the Peterson algorithm is implemented with java, becuase the code may not be strictly sequential consistent. Something is wrong with the while(){}. And the code upward might cause a __deadlock__ problem.
+
+## Filter
+* implement peterson algorithm to n threads
+* at most n-j threads at level j
+>Proof: \
+1.assume A is the last thread in level j, and victim \
+2.for other B in level j, writeB(level[B]=j) -> writeB(victim[j]=B) -> writeA(victim[j]=A) -> readA(level[B]==j)
+3.so there is always a B, and the while condition is satisfied, do {}
+4.A cannot in, contradiction
+* mutual exclusion
+* starvation-free
+>Proof: \
+1.assume A is stuck at level j, means no threads in higher levels, means all level j threads are stuck \
+2.suppose A and B are stuck at level j \
+3.A stuck so victim[j]==A, B stuck so victim[j]==B, contradiction
+* deadlock-free
+```java
+public class Filter implements Lock{
+    int[] level;
+    int[] victim;
+
+    public Filter(int n) {
+        level = new int[n];
+        victim = new int[n];
+        for(int i=0; i<n; i++) {
+            level[i] = 0;
+        }
+    }
+
+    @Override
+    public void lock() {
+        int me = ThreadID.get();
+        int n = level.length;
+        for(int i=0; i<n; i++) {
+            level[me] = i;
+            victim[i] = me;
+            boolean flag = true;
+            // spin while conflicts exist
+            //while ((∃k != me) (level[k] >= i && victim[i] == me))
+            while(flag) {
+                int count = 0;
+                for (int k=0; k<n; k++) {
+                    if(k != me && !(level[k] >= i && victim[i]==me))
+                        count ++ ;
+                }
+                if (count == n-1) flag = false;
+            }
+        }
+    }
+    @Override
+    public void unlock() {
+        int me = ThreadID.get();
+        level[me] = -1;
+    }
+}
+```
+> _Notice:_ the unlock method should make level[me] = -1, otherwise the _level[k] >= i_ property will be satisfied and will cause deadlock.
+
+## Bakery algorithm
+* first-come-first-served
+>Proof:
+1.if DA -> DB, then label[A]<label[B] \
+2.writeA(label[A]) -> readB(label[A]) ->writeB(label[B]) ->readB(flag[A]) \
+3.B is locked out while flag[A] is true
+* deadlock-free
+>Proof: Some waiting thread A has the unique least (label[A],A) pair, and that
+thread never waits for another thread.
+* mutual exclusion
+>Proof:
+1.suppose A and B are two threads in CS and (label[A],A) << (label[B],B).
+2.when B successfully completed its while, it must have got flag[A]==false or (label[B],B) << (label[A],A), so it got flag[A]==false
+3.labelingB -> readB(flag[A]==false) -> writeA(flag[A]==true) -> labelingA
+4.contradiction with (label[A],A) << (label[B],B)
+* starvation-free
+```java
+public class Bakery implements Lock{
+    boolean[] flag;
+    int[] label;
+
+    public Bakery(int n) {
+        flag = new boolean[n];
+        label = new int[n];
+        for(int i=0; i<n; i++) {
+            flag[i] = false;
+            label[i] = 0;
+        }
+    }
+
+    @Override
+    public void lock() {
+        int i = ThreadID.get();
+        flag[i] = true;
+        int n = label.length;
+        //label[i] = max(label[0], ...,label[n-1]) + 1;
+        for (int x : label) {
+            if (x > label[i]) label[i] = x;
+        }
+        label[i] ++;
+        boolean run = true;
+        //while ((∃k != i)(flag[k] && (label[k],k) << (label[i],i))) {};
+        while(run) {
+            int count = 0;
+            for (int k=0; k<n; k++) {
+                if(k != i && !(flag[k] && k<i && label[k]<label[i]))
+                    count ++ ;
+            }
+            if (count == n-1) run = false;
+        }
+    }
+    @Override
+    public void unlock() {
+        flag[ThreadID.get()] = false;
+    }
+}
+```

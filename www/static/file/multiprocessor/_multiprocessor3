@@ -1,0 +1,170 @@
+#  Concurrent Objects
+>written by Xingang Wang in Dec/2017
+
+quoted from `<The Art of Multiprocessor Programming>`
+>Quiescent consistency is appropriate for applications that require high performance at the cost of placing relatively weak constraints on object behavior.
+
+>Sequential consistency is a stronger condition, often useful for describing low-level systems such as hardware memory interfaces.
+
+>Linearizability, even stronger, is useful for describing higher-level systems composed from linearizable components.
+
+***
+
+## Concurrency and Correctness
+>it is easier to reason about concurrent objects if we can somehow map their concurrent executions to sequential ones, and limit our reasoning to these sequential executions. This principle is the key to the correctness properties introduced in this chapter.
+
+### LockBasedQueue
+```java
+public class LockBasedQueue<T> implements Queue<T>{
+    int head, tail;
+    T[] items;
+    Lock lock;
+    public LockBasedQueue(int capacity) {
+        this.head = 0;
+        this.tail = 0;
+        this.items = (T[])new Object[capacity];
+        this.lock = new Bakery(20);
+    }
+
+    @Override
+    public void enq(T x) throws FullException {
+        lock.lock();
+        try {
+            if(tail - head == items.length) throw new FullException();
+            items[tail % items.length] = x;
+            tail ++;
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    @Override
+    public T deq() throws EmptyException {
+        lock.lock();
+        try {
+            if (tail == head) throw new EmptyException();
+            T x = items[head % items.length];
+            head ++;
+            return x;
+        } finally {
+            lock.unlock();
+        }
+    }
+```
+
+### WaitFreeQueue
+* use volatile
+```java
+public class WaitFreeQueue<T> implements Queue<T>{
+    volatile int head = 0, tail = 0;
+    T[] items;
+    public WaitFreeQueue(int capacity) {
+        items = (T[]) new Object[capacity];
+    }
+
+    @Override
+    public void enq(T x) throws FullException {
+        if (tail - head == items.length) throw new FullException();
+        items[tail % items.length] = x;
+        tail ++;
+    }
+    @Override
+    public T deq() throws EmptyException {
+        if (tail-head == 0) throw new EmptyException();
+        T x = items[head % items.length];
+        head ++;
+        return x;
+    }
+}
+```
+
+## Quiescent Consistency
+>An object is quiescent if it has no pending
+method calls.
+* Method calls should appear to happen in a one-at-a-time,
+sequential order.
+* Method calls separated by a period of quiescence should appear
+to take effect in their real-time order.
+>any time an object becomes quiescent, then the execution so far is equivalent to some sequential execution of the completed calls
+### quiescent is compositional
+>A correctness property P is compositional if, whenever each object in the system satisfies P, the system as a whole satisfies P.
+
+## Sequential Consistency
+* Method calls should appear to take effect in program order.
+>Sequential consistency requires that method calls act as if they occurred in a sequential order consistent with program order. That is, in any concurrent execution, there is a way to order the method calls sequentially so that they (1) are consistent with program order, and (2) meet the object’s sequential specification.
+* nonblocking
+* not compositional
+
+### sequential objects
+* each object has a state
+  + given by a set of fields
+  + Queue example: sequence of items
+* each object has a set of methods
+  + way to manipulate state
+  + Queue example: enq and deq
+
+### pre and postcondition
+dequeue:
+* precondition
+  + Queue is non-empty
+* postcondition
+  + returns first item
+  + removes first item
+
+## Linearizability
+* nonblocking
+>Linearizability’s nonblocking property states that any pending invocation has a correct response,
+* compositional
+* Each method call should appear to take effect instantaneously at some moment between its invocation and respons
+
+## Linearization Points
+* For lock-based implementations, each method’s critical section can serve as its linearization point.
+* For implementations that do not use locking, the linearization point is typically a single step where the effects of the method call become visible to other method calls
+>If it returns an item, the deq() method has a linearization point when the head field is updated (Line 17). If the queue is empty, the deq() method has a linearization point when it throws EmptyException (Line 15). The enq() method is similar.
+
+## Progress Conditions
+* blocking
+  + an unexpected delay by one thread can prevent others from making progress.
+* wait-free
+  + if it guarantees that every call finishes its execution in a finite number of steps
+* bounded wait-free
+  + if there is a bound on the number of steps a method call can take
+  +  This bound may depend on the number of threads.
+  + Bakery algorithm is bounded wait-free
+* population-oblivious
+  + wait-free
+  + performance does not depend on number of active threads
+
+>We say that an object is wait-free if its methods are wait-free, and in an object oriented language, we say that a class is wait-free if all instances of its objects are wait-free. Being wait-free is an example of a nonblocking progress condition, meaning that an arbitrary and unexpected delay by one thread (say, the one holding a lock) does not necessarily prevent the others from making progress.
+* lock-free
+  + A method is lock-free if it guarantees that infinitely often some method call finishes in a finite number of steps
+  + any wait-free method implementation is also lock-free, but not vice versa
+  + some threads could starve
+
+### dependent progress condition
+depend on the platform (i.e, the OS)
+* deadlock-free
+* starvation-free
+* obstruction-free
+  + A lock-free algorithm is obstruction-free, but not vice versa
+  + a back-off mechanism
+>A method is obstruction-free if, from any point after which it executes in isolation, it finishes in a finite number of steps.
+
+## The Java Memory Model
+* instruction reorder
+* If all accesses to a particular field are protected by the same lock, then reads–writes to that field are linearizable
+
+### volatile
+* linearizable
+* the working memory is invalidated and the volatile field’s current value is reread from memory
+*  One common usage pattern for volatile variables occurs when a field is read by multiple threads, but only written by one.
+
+### java.util.concurrent.atomic package
+* AtomicReference<T>
+* AtomicInteger
+  + linearizable memory
+* compareAndSet()
+* set()
+  + act like volatile writes
+* get()
+  + act like volatile reads

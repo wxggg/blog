@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<!-- {% block meta %}block meta{% endblock %} -->
+	<title>{% block title %} ? {% endblock %}草原上的剑齿虎</title>
+	<link rel="shortcut icon" href="/static/img/tiger.png" type="image/x-icon">
+	<link rel="apple-touch-icon-precomposed" href="images/apple-touch-icon.png">
+
+	<link rel="stylesheet" href="/static/css/uikit.css">
+	<link rel="stylesheet" href="/static/css/uikit.gradient.css">
+	<link rel="stylesheet" href="/static/css/addons/uikit.gradient.addons.css" />
+	<link rel="stylesheet" href="/static/css/patch.css">
+	<link type="text/css" rel="stylesheet" href="/static/syntaxhighlighter/styles/shCoreDefault.css">
+
+	<script src="/static/js/jquery.min.js"></script>
+	<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=default"></script>
+	<script src="https://code.jquery.com/jquery-1.12.4.min.js"></script>
+	<script src="/static/js/sha1.min.js"></script>
+	<script src="/static/js/uikit.min.js"></script>
+	<script src="/static/js/sticky.min.js"></script>
+	<script src="/static/js/vue.min.js"></script>
+	<script src="/static/js/awesome.js"></script>
+	<script src="/static/js/highlight.js"></script>
+	<script src="/static/js/addons/search.js"></script>
+	<script src="/static/js/addons/lightbox.js"></script>
+	<script type="text/javascript" src="/static/syntaxhighlighter/scripts/shCore.js"></script>
+	<script type="text/javascript" src="/static/syntaxhighlighter/scripts/shBrushCpp.js"></script>
+	<script type="text/javascript" src="/static/syntaxhighlighter/scripts/shBrushPython.js"></script>
+	<script type="text/javascript" src="/static/syntaxhighlighter/scripts/shBrushJava.js"></script>
+	<script type="text/javascript" src="/static/syntaxhighlighter/scripts/shBrushPerl.js"></script>
+
+	<style>
+		.MathJax_Display{overflow-x:auto;overflow-y:hidden;}
+        .MathJax{outline:0;}
+    </style>
+
+	<style>
+		.syntaxhighlighter table{font-size: 12px !important;}
+    </style>
+
+	{% block beforehead %}
+	<!-- before head  -->{% endblock %}
+</head>
+
+<body class="tm-background" style="background-color:white">
+
+	<div class="uk-cover-background uk-position-relative" style="background-color:grey">
+		{{img | safe}}
+		<div class="uk-position-cover uk-flex uk-flex-center uk-flex-middle">
+			<div class="uk-display-block uk-text-center" style="max-width:1000px">
+				<div class="uk-hidden-small">{{tags |safe}}</div>
+				<h1 class="uk-visible-large" style="color:white; font-size:48px; font-family: Georgia, serif; line-height:50px;">{{name}}</h1>
+				<h1 class="uk-visible-medium" style="color:white; font-size:36px; font-family: Georgia, serif; line-height:40px;">{{name}}</h1>
+				<h1 class="uk-visible-small" style="color:white; font-size:18px; font-family: Georgia, serif; line-height:30px;">{{name}}</h1>
+				<p class="uk-visible-large" style="color:white; font-size:16px">{{meta | safe }}</p>
+				<p class="uk-visible-medium" style="color:white; font-size:14px">{{meta | safe }}</p>
+				<p class="uk-visible-small" style="color:white; font-size:12px">{{meta | safe }}</p>
+				<form class=" uk-search " action="/search" method="get">
+					<input class="uk-search-field" style="color:white; " placeholder="search..." type="text" name="q">
+				</form>
+			</div>
+		</div>
+	</div>
+
+	<div class="" style="position:absolute;left:0%;top:0%;right:4%">
+		<nav class="uk-navbar uk-display-block" style="padding-left:0; padding-right:0; width:100%; background:transparent">
+			<a class="uk-navbar-brand uk-hidden-small" href="/" style="color:white; font-size:24px;">sharix's blog</a>
+
+			<div class="uk-navbar-flip">
+				<ul class="uk-navbar-nav uk-hidden-small">
+					<li class=""><a href="/" style="color:white; font-size:14px">home</a></li>
+					<li class=""><a href="/archives" style="color:white; font-size:14px">archives</a></li>
+					<li class=""><a href="/about" style="color:white; font-size:14px">about</a></li>
+
+				</ul>
+				<!-- <a href="" class="uk-navbar-toggle uk-navbar-toggle-alt"></a> -->
+
+			</div>
+			<!-- <li class="uk-navbar-toggle uk-visible-small uk-parent" data-uk-dropdown="" style="color:white">
+        <div class="uk-dropdown ">
+          <ul class="uk-navbar-nav uk-subnav">
+              <li><a href="/"  style="color:black; font-size:12px">home</a></li>
+              <li><a href="/archives" style="color:black; font-size:12px">archives</a></li>
+              <li><a href="/tags" style="color:black; font-size:14px">tags</a></li>
+              <li><a href="/about"  style="color:black; font-size:12px">about</a></li>
+
+          </ul>
+        </div>
+      </li> -->
+			<div data-uk-dropdown="{mode:'click'}" aria-haspopup="true" aria-expanded="true" class="uk-navbar-toggle uk-visible-small">
+				<!-- <a href="#" style="font-size:32px;"><i class="uk-icon-caret-down" style="color:#c3c3c3"></i></a> -->
+				<div class="uk-dropdown uk-dropdown-small uk-dropdown-bottom" style="top: 26px; left: 10px; background-color: rgba(48, 55, 58, 0.877);">
+					<ul class="uk-nav uk-nav-dropdown" style="background-color:rgba(130, 139, 129, 0.548)">
+						<li><a href="/" style="color:black; font-size:12px">home</a></li>
+						<li><a href="/archives" style="color:black; font-size:12px">archives</a></li>
+						<li><a href="/about" style="color:black; font-size:12px">about</a></li>
+					</ul>
+				</div>
+			</div>
+			<div class="uk-navbar-brand uk-navbar-center uk-visible-small">
+				<a href="/" style="color:white">sharix's blog</a>
+			</div>
+
+		</nav>
+	</div>
+
+	<div class="">
+		{% block content %}
+		{% endblock %}
+	</div>
+
+	<div class="uk-text-center">
+		<p>
+			<a target="_blank" href="https://github.com/sharixos" class="uk-icon-button uk-icon-github"></a>
+			<a target="_blank" href="https://www.linkedin.com/in/xingang-wang-886325136/" class="uk-icon-button uk-icon-linkedin-square"></a>
+			<a href="http://www.sharix.site" class="uk-icon-button uk-icon-twitter"></a>
+		</p>
+		<p>Copyright © Wang Xingang 2018</p>
+	</div>
+</body>
+
+</html>

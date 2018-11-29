@@ -1,0 +1,99 @@
+It takes many steps for a c programs to be compiled and linked. This time i take a simple c program as an example and try to simplify the real compile process and how the program is loaded into memory and run. It takes a few steps for this hello.c file to become an executable program.
+
+***
+```c
+#include <stdio.h>
+
+#define PI 3.14159
+
+float x;
+static int y;
+
+void sayhello(char* str, float sx);
+
+int main()
+{
+  //www.sharix.site
+  char * str = "sharix";
+  x = PI + 1;
+  sayhello(str, x);
+  return 0;
+}
+
+void sayhello(char * str, float sx)
+{
+  printf("sx:%f hello %s\n",sx, str);
+}
+```
+
+## preprocessing
+Preprocessing will do some replace works, such as some __#define__ macros,  you can use `gcc -E hello.c -o hello.i` or `cpp hello.c > hello.i` to get the .i result.
+* expand the __#define__, to make the 3.1415926 replace PI with
+`x = 3.14159 + 1;`
+* dealing with __#include__, to insert the stdio.h to where the precompile commands are
+```c
+...(there are many lines before here)
+typedef unsigned char __u_char;
+typedef unsigned short int __u_short;
+typedef unsigned int __u_int;
+typedef unsigned long int __u_long;
+
+extern int printf (const char *__restrict __format, ...);
+
+extern int sprintf (char *__restrict __s,
+      const char *__restrict __format, ...) __attribute__ ((__nothrow__));
+```
+* remove all of the annotation
+* add the number of lines and identication of files, for debug
+
+## compilation
+compilation turns c source code to assembling file, we can do this by `gcc -S hello.i -o hello.s`
+```c
+        .file	"hello.c"
+    	.section	.rodata
+    .LC0:
+    	.string	"sharix"
+    .LC1:
+    	.string	"hello %s\n"
+    .LC3:
+    	.string	"PI is %f\n"
+    	.text
+    	.globl	main
+    	.type	main, @function
+    main:
+    .LFB0:
+    	.cfi_startproc
+    	pushq	%rbp
+    	.cfi_def_cfa_offset 16
+    	.cfi_offset 6, -16
+    	movq	%rsp, %rbp
+    	.cfi_def_cfa_register 6
+    	subq	$32, %rsp
+    	movq	$.LC0, -8(%rbp)
+    	movq	-8(%rbp), %rax
+    	movq	%rax, %rsi
+    	movl	$.LC1, %edi
+    	movl	$0, %eax
+    	call	printf
+    	movabsq	$4614256650576692846, %rax
+    	movq	%rax, -24(%rbp)
+    	movsd	-24(%rbp), %xmm0
+    	movl	$.LC3, %edi
+    	movl	$1, %eax
+    	call	printf
+    	movl	$0, %eax
+    	leave
+    	.cfi_def_cfa 7, 8
+    	ret
+    	.cfi_endproc
+    .LFE0:
+    	.size	main, .-main
+    	.ident	"GCC: (Ubuntu 5.4.0-6ubuntu1~16.04.4) 5.4.0 20160609"
+    	.section	.note.GNU-stack,"",@progbits
+```
+It is easy to find that after all have been set done(include the string memory, register value .etc), then we can call printf to get do the work.
+
+## assembling
+ Assembling turns the .asm or .s file to command that the machine can execute, and each assembling line points to a machine instruction. There is a table to translate the assembling command and machine instruction.
+ `gcc –c hello.c –o hello.o`
+## linking

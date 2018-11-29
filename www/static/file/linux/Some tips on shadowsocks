@@ -1,0 +1,44 @@
+## proxychains
+the problem that in terminal you cann't access socks
+You can use [proxychains](https://github.com/rofl0r/proxychains-ng) to fix this problem. you can configure your proxy in `/etc/proxychains.conf`
+```
+[ProxyList]
+socks5 127.0.0.1 your_port
+```
+Then you should only use the command just like
+`sudo proxychains4 apt-get update`
+
+
+
+## polipo
+use polipo to turn socks proxy to httpproxy
+
+```shell
+$sudo apt-get install polipo
+```
+Edit the config file at `/etc/polipo/config`, and append the following two lines:
+```shell
+socksParentProxy = "localhost:1080"
+socksProxyType = socks5
+```
+start and stop
+```shell
+$sudo service polipo stop
+$sudo service polipo start
+```
+Now command as folows is alright:
+```shell
+$http_proxy=http://localhost:8123 curl ip.gs
+```
+Now we need to add the http_proxy setting into bashrc.If you are using zsh then edting ~/.zshrc and add the following:
+```shell
+export http_proxy=http://localhost:8123
+export https_proxy=http://localhost:8123
+```
+At last you need to add the http_proxy and https_proxy and ip port settings to the system proxy setting.
+
+## shadowsocks corrupt
+try restart the service, or stop then start
+```shell
+$sudo service shadowsocks restart
+```

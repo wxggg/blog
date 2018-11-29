@@ -1,0 +1,308 @@
+#Java Multi-thread Programming
+>wirrten by Xingang Wang in Dec/2017
+
+## synchronized problem
+
+To realize a simple login servlet as an example, there are 2 fileds username and password, every time a cliet wants to send request of field password and username, the usernameRef and passwordRef will get the value.
+```java
+// file LoginServlet.java
+public class LoginServlet {
+
+  private static String usernameRef;
+  private static String passwordRef;
+
+  /*synchronized*/ public static void doPost(String username, String password) {
+    try {
+      usernameRef = username;
+      if (username.equals("a")) {
+        Thread.sleep(5000);
+      }
+      passwordRef = password;
+      System.out.println("username:"+usernameRef+"   password:"+passwordRef);
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
+  }
+
+}
+```
+And then there is several clients, for example ALogin.java as folows:
+```java
+public class ALogin extends Thread {
+
+  public void run() {
+      LoginServlet.doPost("a", "aa");
+  }
+
+}
+```
+And BLogin.java as follows:
+```java
+  public void run() {
+      LoginServlet.doPost("b", "bb");
+  }
+```
+Everythins seems to be right, but if we do not add the _synchronized_ key words to the function doPost, there will be problem, and the result is as follows:
+```
+username:b   password:bb
+username:b   password:aa
+```
+This result is because the function doPost is a static function of clas LoginServlet, and fields usernameRef and passwordRef are all static, so this means there's only one permenant position to store the two values, and they will change to different words by diffrent threads. And the operation Thread.sleep() makes this change always happen. So there must be a _synchronized_ key words to prevent such things happen.
+
+***
+
+## producer/consumer
+
+_dead threads_
+* multiproducer & multiconsumer operate value
+* When there are many producer threads and many consumer threads are working, a dead problem may occur. That is all the threads may all be waiting, because e.g a producer thread notify() another producer thread, while the product hasn't been consumed, the 'another' producer will be waiting. And then every thread is waiting.
+* _solve:_ change the `notify()` to `notifyAll()`
+
+
+## Thread communication - pipe
+
+_PipedInputStream & PipedOutputStream (bytes)_
+```java
+public void writeMethod(PipedOutputStream out) {
+    try {
+        System.out.println("write : ");
+        for(int i= 0; i<300; i++) {
+            String outdata = "" + (i+1);
+            out.write(outdata.getBytes());
+            System.out.print(outdata);
+        }
+        System.out.println();
+        out.close();
+    } catch (IOException e) {
+        e.printStackTrace();
+    }
+}
+
+public void readMethod(PipedInputStream in) {
+    try {
+        System.out.println("read :");
+        byte[] byteArray = new byte[20];
+        int readLength = in.read(byteArray);
+        while (readLength != -1) {
+            String newData = new String(byteArray, 0, readLength);
+            System.out.print(newData);
+            readLength = in.read(byteArray);
+        }
+        System.out.println();
+        in.close();
+    } catch (IOException e) {
+        e.printStackTrace();
+    }
+}
+```
+_pipedwriter & piped reader (char)_
+```java
+public void writeMethod(PipedWriter out) {
+    try {
+        System.out.println("write : ");
+        for(int i= 0; i<300; i++) {
+            String outdata = "" + (i+1);
+            out.write(outdata);
+            System.out.print(outdata);
+        }
+        System.out.println();
+        out.close();
+    } catch (IOException e) {
+        e.printStackTrace();
+    }
+}
+
+public void readMethod(PipedReader in) {
+    try {
+        System.out.println("read :");
+        char[] byteArray = new char[20];
+        int readLength = in.read(byteArray);
+        while (readLength != -1) {
+            String newData = new String(byteArray, 0, readLength);
+            System.out.print(newData);
+            readLength = in.read(byteArray);
+        }
+        System.out.println();
+        in.close();
+    } catch (IOException e) {
+        e.printStackTrace();
+    }
+}
+```
+
+***
+
+## join()
+The method _join()_ is used, when the main thread need to wait until its child threads have runned out. The implementation of _join()_ is as follows in souce code:
+```java
+public final synchronized void join(long millis)
+throws InterruptedException {
+    long base = System.currentTimeMillis();
+    long now = 0;
+
+    if (millis < 0) {
+        throw new IllegalArgumentException("timeout value is negative");
+    }
+
+    if (millis == 0) {
+        while (isAlive()) {
+            wait(0);
+        }
+    } else {
+        while (isAlive()) {
+            long delay = millis - now;
+            if (delay <= 0) {
+                break;
+            }
+            wait(delay);
+            now = System.currentTimeMillis() - base;
+        }
+    }
+}
+```
+* It is obvious that the _join()_ method uses wait()
+* The thread called _join()_ will wait millis time (mostly is the main thread)
+
+### difference to sleep()
+* _sleep()_ will not release lock
+* _join()_ will release the lock of the thread (notice not the main thread).
+
+***
+
+## ThreadLocal
+* _set()_
+* _get()_
+* @override function _initialValue()_ can get a non null value initially.
+
+### InheritableThreadLocal
+* let child thread get value from parent thread
+* child can change the value
+* __notice:__ at the time when child thread get the value and the parent thread is altering the value simultanously, the child thread will get the old value.
+
+***
+
+## Lock
+
+### ReentrantLock & Condition
+* the ReentrantLock is _reentrant_, a thread that is holding the lock can acquire it again without blocking.
+* There must be a `lock.lock()` before the following operations:
+    + condition.await()
+    + condition.signal()
+    + condition.signalAll()
+* method to signal parts of the whole threads is to use many __Condition__ object. You can groups the threads  that you want to signal at the same time and with the same condition.
+* [more](https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/locks/ReentrantLock.html) about ReentrantLock
+
+### producer/consumer 1/1
+```java
+public void set() {
+    try {
+        lock.lock();
+        while(hasValue == true) {
+            condition.await();
+        }
+        System.out.println("***");
+        hasValue = false;
+        condition.signal();
+    } catch (Exception e) {
+        //TODO: handle exception
+    } finally {
+        lock.unlock();
+    }
+}
+
+public void get() {
+    try {
+        lock.lock();
+        while(hasValue == false) {
+            condition.await();
+        }
+        System.out.println("%%%");
+        hasValue = true;
+        condition.signal();
+    } catch (Exception e) {
+        //TODO: handle exception
+    } finally {
+        lock.unlock();
+    }
+}
+```
+### producer/consumer m/n
+* As mentioned before, if there are many producers and consumers, the _dead problem_ may occure. That is all the threads may all be waiting, because e.g a producer thread notify() another producer thread, while the product hasn't been consumed, the 'another' producer will be waiting. And then every thread is waiting.
+* The solution is also to use `condition.signalAll()`
+
+### fair lock
+* come first, get lock first
+* `new ReentrantLock(true)`
+
+### unfair lock
+* preempt to get lock
+* `new ReentrantLock(false)`
+
+### ReentrantLock methods
+* getHoldCount()
+    * `lock.getHoldCount()`
+    * how many threads get locked, how many threads call `lock()`
+* getQueueLength()
+    * how many threads are waiting, threads waiting for the lock to release.
+* getWaitQueueLength()
+    * `lock.getWaitQueueLength(condition)`
+    * how many threads are waiting the condition
+* hasQueuedThread()
+    + `lock.hasQueuedThread(thread)`
+    + judge if thread is waiting the lock
+* hasQueuedThreads()
+    + judge if there is thread waiting the lock
+* hasWaiters()
+    + `lock.hasWaiters(condition)`
+    + query if there is thread waiting the condition
+* isFair()
+    + judge is fair or not
+* isHeldByCurrentThread()
+    + if current thread get the lock
+* isLocked()
+    + if the lock is get by any thread
+* tryLock()
+    + `lock.tryLock()` return boolean, when the locked isn't get by other thread
+    + `lock.tryLock(3, TimeUnit.SECONDS)` time limited to get the lock that not get by others
+* lockInterruptibly()
+* awaitUninterruptibly()
+* awaitUntil()
+
+### ReentrantReadWriteLock
+* read & read {shared}
+    + lock.readLock().lock()
+    + several read threads will all get the lock
+* write & * {mutually exclusive}
+```java
+private ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
+
+public void read() {
+    try {
+        try {
+            lock.readLock().lock();
+            System.out.println("get read lock " + Thread.currentThread().getName() + " " + System.currentTimeMillis());
+        } finally {
+            lock.readLock().unlock();
+        }
+    } catch (Exception e) {
+        //TODO: handle exception
+    }
+}
+
+public void write() {
+    try {
+        try {
+            lock.writeLock().lock();
+            System.out.println("get write lock " + Thread.currentThread().getName() + " " + System.currentTimeMillis());
+            Thread.sleep(10000);
+        } finally {
+            lock.writeLock().unlock();
+        }
+    } catch (Exception e) {
+        //TODO: handle exception
+    }
+}
+```
+
+## __volatile__
+The keyword _volatile_ is used to make sure that other thread will see the value altered by this thread instaneously, the _Lock_ and _synchronized_ can also have this property. But the volatile can let the method to be Lock-free or wait-free. Volatile in Java memory module can store the value to memory from cache immediately, so other thread always read the newsest value.

@@ -1,0 +1,76 @@
+实验目的：验证64位内核+32位库+32位应用软件的可行性
+
+实验平台：32位Ubuntu
+
+## 1. 虚拟机安装32位Ubuntu
+这里选择Ubuntu 32位 16.04版本，虚拟机使用VirtualBox，因为后续需要在虚拟机内部编译64位内核，所以给虚拟机分配的硬盘空间应不少于20GB，分配的内存尽量不少于1.5GB
+
+Ubuntu下载可选择各个学校的开源镜像站，内核源代码下载可前往：https://www.kernel.org/
+
+## 2. 检查内核版本及位数
+使用 uname -a 可以查看完整内核信息，若结尾为i386或i686均为32位内核，若为x86_64则为64位内核
+
+## 3. 编译安装源代码
+下载内核代码之后，解压，进入文件夹下面，先安装必备的库
+```shell
+sudo apt-get install git fakeroot build-essential  ncurses-dev xz-utils libssl-dev bc
+```
+可能还需要安装flex，和bison
+
+然后执行如下配置，这里的`ARCH=x86_64`确保编译的是64位的内核
+```shell
+sudo make ARCH=x86_64 menuconfig
+```
+然后编译安装
+```shell
+sudo make -j 2
+sudo make modules_install -j 2
+sudo make install -j 2
+```
+__注：这里模块安装时会报warning，是虚拟机vbox的原因，可能也是之后启动出错的原因__
+
+## 4. 更新
+如下4.16.9为内核的版本号，须更换为源代码对应的版本号
+```shell
+update-initramfs -c -k 4.16.9
+update-grub
+```
+__注：还是因为virtualbox的原因，这里也有一个报错__
+
+## 5. 更改内核启动
+修改文件 `/etc/default/grub`，如下将`GRUB_HIDDEN_TIMEOUT=0`这一行注释掉
+
+```shell
+# If you change this file, run 'update-grub' afterwards to update
+# /boot/grub/grub.cfg.
+# For full documentation of the options in this file, see:
+#   info -f grub -n 'Simple configuration'
+
+GRUB_THEME=/boot/grub/themes/Vimix/theme.txt
+
+
+GRUB_DEFAULT=0
+#GRUB_HIDDEN_TIMEOUT=0
+GRUB_HIDDEN_TIMEOUT_QUIET=true
+GRUB_TIMEOUT=10
+GRUB_DISTRIBUTOR=`lsb_release -i -s 2> /dev/null || echo Debian`
+GRUB_CMDLINE_LINUX_DEFAULT="quiet splash"
+GRUB_CMDLINE_LINUX=""
+
+# Uncomment to enable BadRAM filtering, modify to suit your needs
+# This works with Linux (no patch required) and with any kernel that obtains
+# the memory map information from GRUB (GNU Mach, kernel of FreeBSD ...)
+#GRUB_BADRAM="0x01234567,0xfefefefe,0x89abcdef,0xefefefef"
+
+# Uncomment to disable graphical terminal (grub-pc only)
+```
+
+然后更新grub，然后启动就可以选择高级选项，选择对应的内核版本进行启动
+```shell
+sudo update-grub
+```
+
+## 6.总结
+最终还是没有启动成功，主要出错的原因是virtualbox的模块导致的问题，所以不使用虚拟机的话或许可以成功，建议可以试试在真机上安装32位系统，然后编译安装64位再启动试试。
+
+另外lfs的话估计应该也可以，lfs的话需要先构建一个32位的lfs，由于我这里只有之前保存的64位的lfs，所以没法进行实验

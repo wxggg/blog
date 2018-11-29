@@ -1,0 +1,26 @@
+#accordion{
+	width:600px;
+	margin:0 auto 9px;
+}
+#accordion .accordion-title:before{
+	content:"\25ba";
+	color:#ccc;
+	margin-right:5px;
+}
+#accordion .accordion-content{
+	height:0;
+	overflow:hidden;
+	padding-left:20px;
+	-webkit-transition:height 1s ease;
+	-moz-transition:height 1s ease;
+	-ms-transition:height 1s ease;
+	-o-transition:height 1s ease;
+	transition:height 1s ease;
+}
+#accordion :target .accordion-title:before{
+	content:"\25bc";
+	color:#f00;
+}
+#accordion :target .accordion-content{
+	height:auto;
+}
