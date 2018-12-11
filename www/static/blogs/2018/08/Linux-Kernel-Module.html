@@ -3,7 +3,8 @@
 <p>https://www.tldp.org/LDP/lkmpg/2.6/html/lkmpg.html</p>
 <p>A kernel module extends  the functionality of the kernel without the need to reboot the system.Take device driver as an example, it allows the kernel to access hardware connected to the system. Without kernel module we have to add the code into the kernel source code, and rebuild and reboot the kernel, obviously this is complicated.</p>
 <p>You can see the module that has already been loaded into the kernel by command <code>lsmod</code>, it reads information from <code>/proc/modules</code>.</p>
-<h2>Hello World</h2><hr style="margin-left:40%; margin-right:40%;"/>
+<h2><a data-uk-modal="{target:'#category-id'}">Hello World</a></h2>
+
 <p>This is a test for kernel module, two functions are necessary: <code>init_module</code> and <code>cleanup_module</code></p>
 <pre class="brush: c;">
 /*
@@ -27,7 +28,8 @@ void cleanup_module(void)
 	printk(KERN_INFO "Goodbye world 1.\n");
 }
 </pre>
-<h3>compile</h3>
+<h3><a data-uk-modal="{target:'#category-id'}">compile</a></h3>
+
 <p>This is a simple Makefile for a basic kernel module</p>
 <pre class="brush: perl;">
 obj-m += hello-1.o
@@ -39,7 +41,8 @@ clean:
 	make -C /lib/modules/$(shell uname -r)/build M=$(PWD) clean
 </pre>
 <p>After <code>make</code>, the Makefile will generate several files, in which there's a hello-1.ko, we can use <code>modinfo hello-1.ko</code> to see the information.</p>
-<h3>load and remove module</h3>
+<h3><a data-uk-modal="{target:'#category-id'}">load and remove module</a></h3>
+
 <p>use <code>insmod ./hello-1.ko</code> to load the module, you might need sudo to get permission. After loaded, you can use <code>lsmod</code> or cat the file <code>/proc/modules</code> to know whether the module is loaded. Since there are many modules, you can use <code>| grep 'hello'</code> to filter the information.</p>
 <pre class="brush: perl;">
 $cat /proc/modules | grep 'hello'
@@ -157,7 +160,8 @@ module_init(hello_5_init);
 module_exit(hello_5_exit);
 </pre>
 <p>To load this module, you can set the parameter like <code>insmod hello-5.ko myint=128</code>, and the value inside will be set.</p>
-<h3>printk</h3>
+<h3><a data-uk-modal="{target:'#category-id'}">printk</a></h3>
+
 <p>The console might not get the printk information, so you need a complete terminal by <code>ctrl alt f1</code> or to <code>f6</code>, and <code>ctrl alt f7</code> back to graphical mode. Beside, the printk macros need <code>KERN_ALERT</code> like</p>
 <pre class="brush: c;">
 printk(KERN_ALERT "hello world");
@@ -165,11 +169,13 @@ printk(KERN_ALERT "hello world");
 <p>The printk can be replaced by using <strong>current</strong> to get current task's tty structure.  You can look inside that tty structure to find a pointer to a string write function, used to write a string to the tty. In the example print_string.c, you can insmod the module in user terminal, and the information will be printed.</p>
 <ul><li>print_string.c - Send output to the tty we're running on, regardless if it's through X11, telnet, etc.  We do this by printing the string to the tty associated with the current task.</li>
 </ul>
-<h3>flashing keyboard LEDs</h3>
+<h3><a data-uk-modal="{target:'#category-id'}">flashing keyboard LEDs</a></h3>
+
 <p>You can communicate the external world by kernel module programing, the keyboard leds is such an example. One of the keyboard led will keep blinking when the module is loaded.</p>
 <ul><li>kbleds.c - Blink keyboard leds until the module is unloaded.</li>
 </ul>
-<h2>Character Device File</h2><hr style="margin-left:40%; margin-right:40%;"/>
+<h2><a data-uk-modal="{target:'#category-id'}">Character Device File</a></h2>
+
 <p>Linux kernel modules is different from general programs, a program always begins from a main function, while modules are not. A kernel module start from the init_module function, and exit with the module_exit function.</p>
 <p>There are two types of devices: character devices and block devices, the block devices have a buffer for requests. When the system was installed, device files are all created by the <strong>mknod</strong> command, for example <code>mknod /dev/coffee c 12 2</code> command can create a new char device named 'coffee' with major/minor number 12 and 2. By convention you should put your device files into /dev</p>
 <p>The major number of the file is used to determined which driver should be used to handle the access. The minor number is used to distinguish between different pieces of hardware.</p>
@@ -183,7 +189,8 @@ struct file_operations fops = {
 };
 </pre>
 <p>The struct file is different from <strong>FILE</strong> defined in glibc, each device is represented in the kernel by a file structure. The struct file is a kernel level structure and never appears in a user space program.</p>
-<h3>register a device</h3>
+<h3><a data-uk-modal="{target:'#category-id'}">register a device</a></h3>
+
 <p>Char devices are accessed through device files, adding a driver to your system means registering it with the kernel.</p>
 <pre class="brush: c;">
 int register_chrdev(unsigned int major, const char *name, struct file_operations *fops);
@@ -193,7 +200,8 @@ int register_chrdev(unsigned int major, const char *name, struct file_operations
 $mknod /dev/DEVICE_NAME c Major 0
 </pre>
 <p>In that command, the DEVICE_NAME represents the name of the device, and the Major represents the return value of register_chrdev. This command can create a device node just for the module.</p>
-<h3>visit device</h3>
+<h3><a data-uk-modal="{target:'#category-id'}">visit device</a></h3>
+
 <p>To visit the device file with <code>cat /dev/chardev</code>, this is a read operation, and the order is device_open -> device_read -> device_read -> device_release.</p>
 <p>And in device_open and device_release there are <code>try_module_get(THIS_MODULE)</code> and <code>module_put(THIS_MODULE)</code>.</p>
 <ul><li><strong>try_module_get</strong>: increment the use count</li>
@@ -203,14 +211,16 @@ $mknod /dev/DEVICE_NAME c Major 0
 <pre class="brush: c;">
 put_user(*(msg_Ptr++), buffer++);
 </pre>
-<h3>Talking to Device Files</h3>
+<h3><a data-uk-modal="{target:'#category-id'}">Talking to Device Files</a></h3>
+
 <p>To talk to general device files, in unix you can use ioctl, every device has its own ioctl commands, including read and write ioctl.</p>
 <p>The example contains several files:</p>
 <ul><li>chardev.c - Create an input/output character device</li>
 <li>chardev.h - the header file with the ioctl definitions.</li>
 <li>ioctl.c - the process to use ioctl's to control the kernel module</li>
 </ul>
-<h2>the proc File System</h2><hr style="margin-left:40%; margin-right:40%;"/>
+<h2><a data-uk-modal="{target:'#category-id'}">the proc File System</a></h2>
+
 <p>The /proc file system is a mechanism for the kernel and the kernel modules to send information to processes. For example, /proc/modules stores the information of all loaded modules, the /proc/devices stores the information of the loaded devices.</p>
 <p>This is an example to create <code>/proc/helloworld</code>, it is necessary to notice that the function <strong>create_proc_entry</strong> has been replaced by <strong>proc_create</strong> since the linux kernel version 3.8.</p>
 <p><a href="/static/file/program/linux/procfs1.c">procfs1.c</a></p>
@@ -219,7 +229,8 @@ put_user(*(msg_Ptr++), buffer++);
 $cat /proc/helloworld
 Hello World!
 </pre>
-<h3>new version</h3>
+<h3><a data-uk-modal="{target:'#category-id'}">new version</a></h3>
+
 <p>It is good to see that i have found the updated version of the linux kernel module examples on github. Thanks to the authors who update these examples.</p>
 <p>https://github.com/bashrc/LKMPG</p>
 <p>The reason why i got an error below is because the header <code><asm/uaccess.h></code> has been replaced with <code><linux/uaccess.h></code>.</p>
@@ -228,16 +239,19 @@ error: implicit declaration of function ‘copy_from_user’
 </pre>
 <p>The function copy_from_user is necessary, kernel module and user program are distributed in different segments. So to communicate the copy_from_user and other similar functions like copy_to_user are needed.</p>
 <p>Just like the printk, only <strong>KERN_ALERT</strong> can print information, the <strong>pr_alert</strong> is the new print function.</p>
-<h3>seq_file</h3>
+<h3><a data-uk-modal="{target:'#category-id'}">seq_file</a></h3>
+
 <p>The seq_file is an API that helps formating a /proc file for output, which is based on sequence, composed of 3 functions: start(), next(), and stop(). When a user read the /proc file, the seq_file API starts a sequence.</p>
 <p>Caution: when a sequence is finished, another starts. The start() will begin when the function stop() ends.</p>
 <p>The example is procfs4.c.</p>
 <p>more information:</p>
 <p>https://lwn.net/Articles/22355/</p>
-<h2>the System Calls</h2><hr style="margin-left:40%; margin-right:40%;"/>
+<h2><a data-uk-modal="{target:'#category-id'}">the System Calls</a></h2>
+
 <p>The location in the kernel where a process can jump to is called system_call. The process checks the system call number, and find in the sys_call_table to see the address of the kernel function to call.</p>
 <p>The major on this blog is about change the kernel function to call by kernel module.</p>
-<h3>library functions and system calls</h3>
+<h3><a data-uk-modal="{target:'#category-id'}">library functions and system calls</a></h3>
+
 <p>It is obvious that system calls are all in kernel space and library functions are in user space, so they are essentially different. Take an example to see the syscalls of a program.</p>
 <pre class="brush: c;">
 #include < stdio.h>
@@ -281,7 +295,8 @@ write(1, "hello", 5hello)                    = 5
 exit_group(0)                           = ?
 +++ exited with 0 +++
 </pre>
-<h3>change system call kernel function</h3>
+<h3><a data-uk-modal="{target:'#category-id'}">change system call kernel function</a></h3>
+
 <p>To change the kernel function, we need to implement our own one, and then change the pointer sys_call_table points to. It's important for cleanup_module to restore the table.</p>
 <p>The example is syscall.c.</p>
 <p>The key operation is in init_module and exit_module, in init_module as follows, the operation on cr0 is to get back to 16-bit mode. In 16-bit mode there is no page privilege, so we can rewrite the sys_call_table.</p>
@@ -309,7 +324,8 @@ static int __init syscall_start(void)
 }
 </pre>
 <p>The exit_module is all about restoring everything back.</p>
-<h3>Blocking Processes</h3>
+<h3><a data-uk-modal="{target:'#category-id'}">Blocking Processes</a></h3>
+
 <p>Every time if a thread is bothered because some conditions are not satisfied, it will be blocked and put into a wait queue. If the condition is satisfied again, the threads on the queue will all be awoken.</p>
 <p>Take the kernel module as an example, the file /proc/sleep can only be opened by a single process at a time. If the file is already opened, the kernel module calls <strong>wait_event_interruptible</strong>, which changes the status of the task to <strong>TASK_INTERRUPTIBLE</strong>, added to WaitQ.</p>
 <p>When the file is closed by the process, module_close is called, which waikes up all the processes in the queue. One of the processes will get the control, and will start at the point right after the call to <strong>module_interruptible_sleep_on</strong>. The process can then set a global variable to tell all the other processes that the file is still open, and other processes will see it and go back to sleep.</p>
@@ -333,16 +349,19 @@ $kill %1
 $./cat_noblock /proc/sleep
 Last input:
 </pre>
-<h2>the Scheduling Tasks</h2><hr style="margin-left:40%; margin-right:40%;"/>
+<h2><a data-uk-modal="{target:'#category-id'}">the Scheduling Tasks</a></h2>
+
 <p>Some tasks need to be done at certain time, if the task is to be done by a process, we can put it in the <strong>crontab</strong> file.</p>
 <p>If the task is to be done by a kernel module, we have two ways. We can put a process in the <strong>crontab</strong> file, and then the process will wakeup the module by a system call when it is necessary. Obviously this is quite inefficient.</p>
 <p>The other way is to create a function that will be called once for every timer interrupt. We can create a task and held it in a workqueue_struct structure, the structure will hold a pointer to the function. And then use queue_delayed_work to put that task on a task list called my_workqueue, which is the list of tasks to be executed on the next timer interrupt.</p>
 <p>Everytime the function is called, we need to put it back on <strong>my_workqueue</strong> so that the functiion will keep on being executed.</p>
 <p><strong>example</strong></p>
 <p>sched.c - schedule a function to be called on every timer interrupt.</p>
-<h3>Interrupt Handlers</h3>
+<h3><a data-uk-modal="{target:'#category-id'}">Interrupt Handlers</a></h3>
+
 <p>We all know that there should be a handler function for the interrupt. When the relevant IRQ is received, the function request_irq() is called, which receves the IRQ number, name of function, flags, a name for /proc/interrupts and a prameter to pass to the interrupt handler.</p>
-<h3>Keyboards on the Intel Architecture</h3>
+<h3><a data-uk-modal="{target:'#category-id'}">Keyboards on the Intel Architecture</a></h3>
+
 <p>Write something for the keyboard interrupt, and disable the regular keyboard interrupt handler first.</p>
 <ul><li>intrpt.c - An interrupt handler</li>
 </ul>

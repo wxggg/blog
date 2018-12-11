@@ -6,7 +6,8 @@ $git clone https://github.com/tensorflow/models
 $cd models/samples/core/get_started/
 $python premade_estimator.py
 </pre>
-<h3>准备数据</h3>
+<h3><a data-uk-modal="{target:'#category-id'}">准备数据</a></h3>
+
 <p>本例使用的是csv格式的数据，可以使用<code>pandas</code>进行处理，如下为train的部分数据，从中可以看出来第一行主要是提供相关信息，比如数据行数等，可以在<code>read_csv</code>函数中说明header=0表示第一行为header，数据从第二行开始。</p>
 <pre class="brush: ;">
 120,4,setosa,versicolor,virginica
@@ -45,7 +46,8 @@ for key in train_x.keys():
 <p><strong>关于 Feature Columns</strong></p>
 <p>Feature Columns（特征列）其实就是用于对model输入数据的一个桥梁，比如对上面的DNNClassifier分类器而言，只需要把feature column作为参数给它就能够把数据输入，在模块<code>tf.feature_column</code>中存在很多函数可以用来创建feature columns， 比如categorical_column或者dense_column，这里使用的是numeric_column。</p>
 <p>对于feature columns的更多信息，参考官网介绍 <a href="https://www.tensorflow.org/get_started/feature_columns">feature_columns</a></p>
-<h3>建立分类器</h3>
+<h3><a data-uk-modal="{target:'#category-id'}">建立分类器</a></h3>
+
 <p>这里建立了两层深度学习层，并用estimator的DNNClassifier来初始化分类器。Estimator代表一个完整的模型，是tensorflow系统的高级API部分，其API提供方法可以训练模型、判断模型的准确性并进行预测。</p>
 <pre class="brush: python;">
 # Build 2 hidden layer DNN with 10, 10 units respectively.
@@ -65,7 +67,8 @@ classifier = tf.estimator.DNNClassifier(
 <li>在Estimator对象上调用一个或多个方法，传递适当的输入函数作为数据源。</li>
 </ul>
 <p>更多关于Estimators的信息参看官网API，<a href="https://www.tensorflow.org/programmers_guide/estimators">estimators</a></p>
-<h3>模型训练及评估</h3>
+<h3><a data-uk-modal="{target:'#category-id'}">模型训练及评估</a></h3>
+
 <p>利用上述的分类器进行训练及评估，分别使用训练输入函数以及测试输入函数来输入数据</p>
 <pre class="brush: python;">
 # Train the Model.
@@ -95,7 +98,8 @@ def train_input_fn(features, labels, batch_size):
     return dataset
 </pre>
 <p>这里对数据进行了shuffle处理，也就是改变输入的数据的次序，使得每次运行时数据的先后顺序是不一样的，对于dataset数据集的更多信息参考官网 <a href="https://www.tensorflow.org/get_started/datasets_quickstart">datasets_quickstart</a>，包括对于csv文件用dataset进行读取处理</p>
-<h3>预测</h3>
+<h3><a data-uk-modal="{target:'#category-id'}">预测</a></h3>
+
 <p>训练完模型之后就可以进行预测了，准备要预测的数据</p>
 <pre class="brush: python;">
 predictions = classifier.predict(

@@ -163,10 +163,22 @@ class BlogSearch(object):
 
     def get_recommend(self, docid):
         document = self.documents[docid]
-        recommend = []
-        for tag in document.tags[:3]:
-            recommend += self.search(tag)
+        recommend = self.search(document.name)
+        recommend.remove(docid)
         recommend = list(set(recommend))
+        
+        for i in range(len(document.tags)):
+            if len(recommend) >= 3:
+                return recommend
+            recommend += self.search(document.tags[i])
+            recommend.remove(docid)
+            recommend = list(set(recommend))
+        
+        while len(recommend) < 3:
+            x = random.randint(0, len(self.documents))
+            if x not in recommend and x != docid:
+                recommend.append(x)
+
         return recommend
 
 bs = BlogSearch('static/blogs/', page_size=4)

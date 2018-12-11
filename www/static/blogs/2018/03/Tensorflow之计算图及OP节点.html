@@ -1,6 +1,7 @@
 <p>计算图graph就是节点与边的集合，是一个有向无环图（DAG）按照DAG图的拓扑排序依次执行OP运算，若存在多个度为0的节点可以进行并发运算</p>
 <img src="https://upload-images.jianshu.io/upload_images/2254249-41f78682c2a03ef1.png" alt="">
-<h2>计算图graph从python传到底层C++</h2><hr style="margin-left:40%; margin-right:40%;"/>
+<h2><a data-uk-modal="{target:'#category-id'}">计算图graph从python传到底层C++</a></h2>
+
 <p>之前提到过会话Session初始化到其父类BaseSession初始化时，若graph为空会调用默认图</p>
 <pre class="brush: python;">
 #tensorflow/python/client/session.py
@@ -129,7 +130,8 @@ class Graph {
 <p>C++的Graph类中还包括添加边添加节点等各种操作，对于计算图graph的初始化过程从python到底层C++大概就是这么个过程。</p>
 <p>当图为空时只有两个节点source和sink，可以确保图执行时起于source并终于sink节点</p>
 <img src="https://upload-images.jianshu.io/upload_images/2254249-a76cc4b63190b851.png" alt="">
-<h2>计算图中边和节点的特征</h2><hr style="margin-left:40%; margin-right:40%;"/>
+<h2><a data-uk-modal="{target:'#category-id'}">计算图中边和节点的特征</a></h2>
+
 <p>边Edge含义前驱节点和后驱节点，边上的数据以张量Tensor的形式传递，Tensor的标识由源节点的名称和src_output唯一确定，即<code>tensor_id = op_name:src_output</code></p>
 <p><code>src_output</code>表示该边是前驱节点的第<code>src_output</code>条输出边，而<code>dst_input</code>表示该边为后驱节点的第条输入边</p>
 <img src="https://upload-images.jianshu.io/upload_images/2254249-221ce27609548c03.png" alt="">
@@ -152,7 +154,8 @@ init = tf.initialize_all_variables()
 </pre>
 <p>这里的Variable其实是一个特殊的OP，拥有状态，变量初始化需要使用如上的<code>initialize_all_variables()</code>函数，如上代码为线性模型，其实际计算图可能为如下：</p>
 <img src="https://upload-images.jianshu.io/upload_images/2254249-61521a9db69ccf75.png" alt="">
-<h2>Variable初始化过程</h2><hr style="margin-left:40%; margin-right:40%;"/>
+<h2><a data-uk-modal="{target:'#category-id'}">Variable初始化过程</a></h2>
+
 <p>Variable的调用起于python上层库，在<code>tensorflow/python/ops/variables.py</code>，Variable在使用进行OP时前必须显示的初始化，对x的赋值只是一个assign指派，实际的初始化需要考虑<code>initialize_all_variables()</code>函数，这个函数同样也在上述文件中。在安装的tensorflow文件和tensorflow源文件中这variables.py貌似不相同，这里参看安装的tensorflow库中的文件</p>
 <pre class="brush: python;">
 def initialize_all_variables():
@@ -209,14 +212,16 @@ def initializer(self):
 </pre>
 <p>回到Variable的初始化过程，对于W的初始化，<code>tf.zeros([784,10])</code>通常被称为初始值，通过assign将W内部的Tensor以引用的形式进行修改为该初始值，另外一个操作是Identity，这个可以用于读取Variable的值</p>
 <img src="https://upload-images.jianshu.io/upload_images/2254249-7c2cd1ef175994b6.png" alt="">
-<h3>Variable之间的依赖关系</h3>
+<h3><a data-uk-modal="{target:'#category-id'}">Variable之间的依赖关系</a></h3>
+
 <p>当一个变量初始化时需要另一个变量的值时，需要用initialized_value进行指定，实际上这两个是通过Identity进行衔接，这样就可以保证W会在V之前进行初始化，这里存在两个Identity，分别进行初始化和变量读，而Identity和assign之间增加的边为控制依赖，确保了初始化的先后顺序</p>
 <pre class="brush: python;">
 W = tf.Variable(tf.zeros([784,10]), name='W')
 V = tf.Variable(W.initialized_value(), name='V')
 </pre>
 <img src="https://upload-images.jianshu.io/upload_images/2254249-07fcc971de877958.png" alt="">
-<h2>tensorflow中OP的本质</h2><hr style="margin-left:40%; margin-right:40%;"/>
+<h2><a data-uk-modal="{target:'#category-id'}">tensorflow中OP的本质</a></h2>
+
 <p>之前提到的的assign操作存在于文件<code>gen_state_ops.py</code>中，这是一个自动生成的文件，应该也是swig进行包装底层时产生的中间层，同样的操作还包括，assign_add,assign_sub等，它们都能够操作Variable。</p>
 <pre class="brush: python;">
 def assign(ref, value, validate_shape=None, use_locking=None, name=None):
@@ -258,11 +263,13 @@ class OpDefLibrary(object):
 <img src="https://upload-images.jianshu.io/upload_images/2254249-7f9c1967e54108ef.png" alt="">
 <p>NodeDef可以通过op从OpRegistry中索引到OpDef</p>
 <img src="https://upload-images.jianshu.io/upload_images/2254249-e25fbf1637123cb9.png" alt="">
-<h3>输入列表和属性值列表</h3>
+<h3><a data-uk-modal="{target:'#category-id'}">输入列表和属性值列表</a></h3>
+
 <p><code>NodeDef</code>中的<code>input</code>成员制定节点的输入列表，input列表前面存普通边，后面保存控制依赖边，如<code>node:src_output</code>，表示一个普通边，用来承载Tensor的数据流，其中<code>node</code>是前驱节点的名称，<code>src_output</code>是前驱节点输出边的索引</p>
 <p>又如<code>^node</code>表示该边为控制依赖边，node为前驱节点名称</p>
 <p>在计算图构造的时候，OP的属性值就确定了，输入输出类型以及Shape等信息都存在OpDef的attr属性列表中</p>
-<h3>OP的注册、构造及执行</h3>
+<h3><a data-uk-modal="{target:'#category-id'}">OP的注册、构造及执行</a></h3>
+
 <p>OP注册在系统初始化的时候，后端系统中可以使用宏<code>REGISTER_OP</code>来注册，实际上就是将其转换成<code>OpDef</code>，OpDefBuilder通过链式调用Input, Output, Attr方法分别构造OP的输入、输出列表，及其属性列表。最后，通过调用Finalize成员函数，经过解析字符串表示，将其翻译为OpDef的内在表示，最后注册到OpRegistry之中。</p>
 <p>例如 <code>REGISTER_OP("ZerosLike")</code>，如图为向系统注册了一个OP</p>
 <img src="https://upload-images.jianshu.io/upload_images/2254249-b1cffcdf5b4e6795.png" alt="">

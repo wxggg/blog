@@ -55,7 +55,8 @@ savFile = sys.argv[7]
 iteration = sys.argv[8]
 randomshuffle = sys.argv[9]
 </pre>
-<h4>解决yangxi的测试代码与luceneutil原作者代码冲突</h4>
+<h4><a data-uk-modal="{target:'#category-id'}">解决yangxi的测试代码与luceneutil原作者代码冲突</a></h4>
+
 <p>由于论文需要利用perf来测试其它参数如 <strong>receiveStamp, processStamp, finishStamp, retiredIns, unhaltedCycles</strong> 等，所以需要对原Lucene性能测试代码进行修改</p>
 <p>之前添加的<code>Affinity.java</code>代码，其实也是一个桥梁，用以勾通Java Lucene测试代码和<code>elfen_signal.c</code> C代码，C代码中用JNICALL来描述C函数，使得其能够被Java所调用，而C函数里面就可以直接进行性能测试perf了</p>
 <pre class="brush: java;">
@@ -83,7 +84,8 @@ import perf.Affinity;
 Affinity.initPerf();
 Affinity.initSignal();
 </pre>
-<h4>第一阶段测试数据结果</h4>
+<h4><a data-uk-modal="{target:'#category-id'}">第一阶段测试数据结果</a></h4>
+
 <p>解决了代码版本冲突之后，可以进行测试了，这里我使用qps为100迭代30次测试初步数据，大概花了几分钟就测完了，如下为部分数据，可以看到我们测试的参数包括，任务id，totalHitCount应该是含有该请求的文档数量(?)，后面的三个stamp可用于以后处理时算运算时间及延迟时间，然后的两个参数retiredInstruction和unhaltedCycles需要使用perf组件才能测试，我们现在还没有加入perf组件所以都为0，最后一个参数为客户端的延迟</p>
 <pre class="brush: python;">
 #taskID->int,totalHitCount->int,receiveStamp->long,processStamp->long,finishStamp->long,retiredInstruction->long,unhaltedCycles->long,clientLatency->int
@@ -103,7 +105,8 @@ Affinity.initSignal();
 <pre class="brush: ;">
 python ../src/python/parseTasks.py ./test_100_30
 </pre>
-<h4>分析一下上述解析代码的逻辑</h4>
+<h4><a data-uk-modal="{target:'#category-id'}">分析一下上述解析代码的逻辑</a></h4>
+
 <p>首先看一下最后生成的qps-latency.csv文件得到的结果，可以看到我们希望测量的几个数据包括qps，实际的qps，然后就是对应的50%和95%的几个数据，暂时还不知道是什么，最后是CPU的利用率以及IPC的值，我们上面说了还没有加入perf部分，所以现在这两个也都为0，好了再看看解析程序拿到原始数据之后都做了些什么才得到最后的结果</p>
 <pre class="brush: python;">
 #timestamp:2018-05-06 15:05:52.509141 qps,realqps,ptime_50latency,ptime_95latency,ltime_50,ltime_95,CPU utiliztion,IPC
@@ -180,10 +183,12 @@ nr_wall_cycles = cols[process_stamp_index][-1] - cols[process_stamp_index][0]
 utilization = nr_cycles/(nr_wall_cycles * 2.0);
 print "total cycles:%d, total wall cycles:%d, utilization:%f\n" % (nr_cycles, nr_wall_cycles * 2, utilization);
 </pre>
-<h4>数据结果分析</h4>
+<h4><a data-uk-modal="{target:'#category-id'}">数据结果分析</a></h4>
+
 <p>从原始数据进行解析后生成了几个文件，分别是<code>client-time-dist.csv</code>，<code>client-time-max.csv</code>，<code>idletime-dist.csv</code>，<code>ptime-dist.csv</code>，<code>ptime-time-dist.csv</code>，<code>qps-latency.csv</code>，<code>rtime.csv</code>。这些文件对应不同的信息，包括客户端的时间以及CPU的空闲时间，包括处理时间。对于论文中的图1，可以使用文件<code>ptime-time-dist.csv</code>中的数据绘图而得。</p>
 <p>在文件<code>qps-latency.csv</code>中保存了最终的结果，可以查看对应qps的延迟，以及CPU的利用率和IPC的值，由于目前实验代码中还没有加入perf测量CPU的数据所以还没有CPU利用率和IPC的值。</p>
-<h4>添加perf测量CPU利用率和IPC</h4>
+<h4><a data-uk-modal="{target:'#category-id'}">添加perf测量CPU利用率和IPC</a></h4>
+
 <p>查询服务程序入口在<code>SearchPerfTest.java</code>中，需要在这里就添加Affinity，</p>
 <pre class="brush: java;">
 Affinity.initPerf();

@@ -13,7 +13,7 @@ function CreateArticleCategory() {
     var rootID = "#rootul"
     var oneID = "#ul0";
     $(".uk-article").children().each(function (index, element) {
-        var tagName = $(this).get(0).tagName;
+        var tagName = element.tagName;
         if (tagName.substr(0, 1) != "H") { return true; }
         if (tagName.substr(1, 1) == "R") { return true; }
         if (tagName.substr(1, 1) > 4) { return true; }//只收录前三级标题
@@ -21,7 +21,7 @@ function CreateArticleCategory() {
         var hID = "h-" + index.toString();
         $(this).attr("id", hID);
 
-        var contentH = $(this).html();
+        var contentH = element.innerText;
         var level = parseInt(tagName.substr(1, 1));
         var liid = "li" + index.toString();
         var ulid = "ul" + index.toString();

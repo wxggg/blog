@@ -1,3 +1,4 @@
+
 {% extends '__base__.html' %}
 
 {% block title %}{{name}} / {% endblock %}
@@ -20,8 +21,8 @@
 		<div class="uk-width-medium-2-10 uk-hidden-small">
 			<p></p>
 		</div>
-		<div class="uk-width-medium-6-10" style="background-color:#fff">
-			<article class="uk-article">
+		<div class="uk-width-medium-6-10" style="background-color:#fff;">
+			<article class="uk-article" >
 				{{ html_content|safe }}
 			</article>
 		</div>
@@ -55,46 +56,9 @@
 		</div>
 	</div>
 
-	<div class="tm-main" style="">
-		<div class="uk-grid">
-			<div class="uk-width-medium-2-10 uk-hidden-small">
-				<p></p>
-			</div>
-			<div class="uk-width-medium-6-10 ">
-				<!-- 来必力City版安装代码 -->
-				<!-- <div id="lv-container" data-id="city" data-uid="MTAyMC8zNDg5Ny8xMTQzNA==">
-					<script type="text/javascript">
-						 (function(d, s) {
-								 var j, e = d.getElementsByTagName(s)[0];
-
-								 if (typeof LivereTower === 'function') { return; }
-
-								 j = d.createElement(s);
-								 j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
-								 j.async = true;
-
-								 e.parentNode.insertBefore(j, e);
-						 })(document, 'script');
-					</script>
-					<noscript>为正常使用来必力评论功能请激活JavaScript</noscript>
-					</div> -->
-				<!-- City版安装代码已完成 -->
-			</div>
-			<div class="uk-width-medium-2-10 uk-hidden-small">
-				<div class="" style="position:fixed;right:3%;top:90%;z-index:100; ">
-					<div class="uk-button-group">
-						<!-- 触发模态对话框的按钮 -->
-						<button class="uk-button back-to-top" style="background:rgba(63, 73, 63, 0.596);" href="#" uk-totop
-						 data-uk-smooth-scroll><i class="uk-icon-arrow-up"></i></button>
-						<button class="uk-button" style="background:rgba(63, 73, 63, 0.596);" data-uk-modal="{target:'#my-id'}"><i class="uk-icon-bars"></i></button>
-					</div>
-				</div>
-			</div>
-		</div>
-	</div>
 </div>
 <!-- 模态对话框 -->
-<div id="my-id" class="uk-modal">
+<div id="category-id" class="uk-modal">
 	<div class="uk-modal-dialog">
 		<a class="uk-modal-close uk-close"></a>
 		<h3 class="uk-panel-title">本文概览</h3>

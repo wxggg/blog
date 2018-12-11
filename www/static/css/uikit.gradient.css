@@ -359,16 +359,16 @@ tr:hover {
  * `font-size` is set in `html` element to support the `rem` unit for font-sizes
  */
 html {
-  font-size: 14px;
+  font-size: 16px;
 }
 body {
   background: #ffffff;
   /* font-family: 'Lato', "PingFang SC", "Microsoft YaHei", sans-serif,"EB Garamond","Hiragino Sans GB", "中易宋体","微软雅黑" !important; */
   /* font-family: Georgia, "Times New Roman", "Microsoft YaHei", "微软雅黑", STXihei, "华文细黑", serif !important; */
-  font-family: Arial, Helvetica, tahoma, verdana, 宋体, SimSun, 华文细黑, STXihei, sans-serif;
+  font-family: Georgia, Arial, Helvetica, tahoma, verdana, 宋体, SimSun, 华文细黑, STXihei, sans-serif;
   font-weight: normal;
   line-height: 30px;
-  color: #555;
+  color: #333;
   /* background-image: -webkit-radial-gradient(100% 100%, center, #ffffff, #ffffff); */
   background-image: radial-gradient(100% 100% at center, #ffffff, #ffffff);
 }
@@ -392,14 +392,14 @@ body {
  */
 a,
 .uk-link {
-  color: #008200;
-  /* text-decoration: underline; */
+  color: #050505fa;
   cursor: pointer;
+  text-decoration: none;
 }
 a:hover,
 .uk-link:hover {
-  color: #555;
-  text-decoration: underline !important;
+  color: #aaaaaa;
+  text-transform: uppercase;
 }
 /*
  * Emphasize
@@ -543,7 +543,7 @@ h1,
   font-size: 36px;
   line-height: 40px;
   color: black;
-  font-weight: normal;
+  font-weight: bold;
   text-align: center;
   margin-top: 30px;
   margin-bottom: 20px;
@@ -551,23 +551,22 @@ h1,
 }
 h2,
 .uk-h2 {
-  font-size: 28px;
+  font-size: 32px;
   line-height: 1.5;
-  font-weight: normal;
+  font-weight: bold;
   text-align: center;
   margin-top: 50px;
   margin-bottom: 5px;
   font-family: Georgia, serif;
-  color: #222;
+  color: #000;
 }
 h3,
 .uk-h3 {
   font-size: 22px;
   line-height: 1.5;
-  font-weight: normal;
-  font-style: italic;
-  text-align: center;
-  margin-top: 50px;
+  font-weight: bold;
+  font-style: normal;
+  margin-top: 15px;
   margin-bottom: 15px;
   font-family: Georgia, serif;
   color: #333;
@@ -1801,8 +1800,8 @@ ul.uk-nav-sub {
   color: #444444;
   /* 2 */
   outline: none;
-  box-shadow: inset 0 0 1px rgba(0, 0, 0, 0.1);
-  text-shadow: 0 -1px 0 #ffffff;
+  /* box-shadow: inset 0 0 1px rgba(0, 0, 0, 0.1); */
+  /* text-shadow: 0 -1px 0 #ffffff; */
 }
 /* Active */
 .uk-nav-side > li.uk-active > a {
@@ -1840,7 +1839,7 @@ ul.uk-nav-sub {
  */
 .uk-nav-dropdown > li > a {
   color: #000;
-  font-size: 15px;
+  font-weight: bold;
 }
 /*
  * Hover
@@ -1849,14 +1848,13 @@ ul.uk-nav-sub {
  */
 .uk-nav-dropdown > li > a:hover,
 .uk-nav-dropdown > li > a:focus {
-  background: #37c271;
-  color: #ffffff;
+  color: #000;
   /* 2 */
   outline: none;
   /* box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.452); */
   /* text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.2); */
   text-align: center;
-  text-transform: capitalize;
+  text-transform: uppercase;
 }
 /*
  * Sub-object: `uk-nav-header`
@@ -1877,8 +1875,8 @@ ul.uk-nav-sub {
   color: #555;
 }
 .uk-nav-dropdown ul a:hover {
-  color: #999;
-  background: rgba(75, 230, 61, 0.219)
+  color: rgba(255, 255, 255);
+  background: rgba(0, 0, 0, 0.459); 
 }
 /* Modifier `uk-nav-navbar`
  ========================================================================== */

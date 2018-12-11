@@ -3,7 +3,8 @@
 <li>logistic回归-sklearn</li>
 <li>单层神经网络-softmax全连接-tensorflow</li>
 </ul>
-<h2>数据集简介</h2><hr style="margin-left:40%; margin-right:40%;"/>
+<h2><a data-uk-modal="{target:'#category-id'}">数据集简介</a></h2>
+
 <p>mnist的数据为灰度图片，分为训练数据和测试数据，数据的形式比较简单，数据标签为0-9之间的数字，mnist的数据可以使用多种方式获得，这里直接采用tensorflow的keras框架api来获取</p>
 <pre class="brush: python;">
 mnist = tf.keras.datasets.mnist.load_data()
@@ -20,7 +21,8 @@ for ty in train_y:
     onehot[ty] = 1
     onehot_train_y.append(onehot)
 </pre>
-<h2>朴素贝叶斯分类-sklearn</h2><hr style="margin-left:40%; margin-right:40%;"/>
+<h2><a data-uk-modal="{target:'#category-id'}">朴素贝叶斯分类-sklearn</a></h2>
+
 <p>朴素贝叶斯主要过程是利用标注数据进行监督学习，学习X和Y的联合概率分布，然后据此来推断预测数据为条件概率最大的类别。这里根据每个像素的值进行区分为0或者非0，作为朴素贝叶斯分类器的特征。朴素贝叶斯是一种基于概率理论的分类算法，特征之间进行条件独立性假设。</p>
 <p>补充两个名词说明，MLE为最大似然估计，MAP为最大后验概率</p>
 <p>使用机器学习库sklearn进行测试，分别使用GaussianNB、MultinomialNB和BernoulliNB进行测试，得到如下结果，可以看到后两者的效果比较好，并且在准确率和所须时间方面各有千秋。另外我用自己写的NB也进行了测试，由于在保存权重时使用的是dict，所以导致大量数据同时预测时速度较慢，用时达到了19s，但是正确率还行达到了0.83，如果用array来保存并计算的话应该会快很多。</p>
@@ -43,7 +45,8 @@ bnb = BernoulliNB()
 bnb.fit(train_linear_x, train_y)
 y_pred = bnb.predict(test_linear_x)
 </pre>
-<h2>logistic回归分类-sklearn</h2><hr style="margin-left:40%; margin-right:40%;"/>
+<h2><a data-uk-modal="{target:'#category-id'}">logistic回归分类-sklearn</a></h2>
+
 <p>逻辑回归其实就相当与一个单层的人工神经网络，在多分类算法训练过程中有两种方式，一种是 one-vs-rest，也就是当前类为正样本时其它全部为负样本，另一种方式是使用 multinomial，也就是多项的意思，这种方式的训练只支持lbfgs,sag和newton-cg</p>
 <p>sklean的逻辑回归包括两种，一个是LogisticRegression，另一个是LogisticRegressionCV，后面的CV表示crossvalidation即交叉验证的意思，这两种都可以设置正则化参数L1或L2，默认为L2。这里分别使用这两种方式测试，由于我们的样本数量比较大，为6000个slice，所以可以将迭代的次数设置得小一点，不然的话训练所需的时间特别多，而且随着迭代次数的增加，貌似训练时间是非线性增加的(手动黑人问号脸)</p>
 <pre class="brush: python;">
@@ -59,7 +62,8 @@ logistic.fit(train_linear_x, train_y)
 logistic.score(test_linear_x, test_y)
 </pre>
 <p>使用LogisticRegressionCV训练时，由于需要交叉验证所以运算量过大，所需时间过长所以并不适用。</p>
-<h2>单层神经网络-softmax全连接</h2><hr style="margin-left:40%; margin-right:40%;"/>
+<h2><a data-uk-modal="{target:'#category-id'}">单层神经网络-softmax全连接</a></h2>
+
 <p>线性分类的方式采用的是对每一个像素点赋予一个权重，然后通过训练求得权重矩阵，这里采用的是softmax回归，与logistic回归差不多，主要区别是对于K分类就有K个权重W，而logistic回归只需要K-1个权重W。</p>
 <p>softmax回归与logistic一样，都可以看做是一层单层神经网络，一般作为神经网络中的全连接层，这里softmax的作用就是在最后对所有结果的概率进行一个归一化。</p>
 $$S_i = \frac{e^{z_i}}{\sum_j e^{z_i}}$$

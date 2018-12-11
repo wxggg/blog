@@ -1,9 +1,11 @@
 <p>文章主要是关于细粒度高频率观测程序性能，作者yangxi，<a href="https://github.com/yangxi/SHIM">文章和实验代码</a>均可以在github上找到 。一般的程序性能观测采样是采用的linux的perf模块，但是perf只能观测较为宏观的程序性能参数，如果进行高频度的观测，观测程序就会对被观测程序进行影响，而这篇文章中的shim正是为解决这个问题而存在的。而shim之所以能在elfen论文中被使用也正是因为其高频度的准确观测程序数据，这一点使得其能够高频度观测到cpu空闲的区间，进而被elfen所用。</p>
 <p>实验代码主要包括两个部分，一个是一个linux内核模块ppid_module，另一个是shim的核心代码。文章中的实验数据是对一个java模拟器进行性能观测，这里我仅对ppid_module和shim的两个简单使用例子进行说明。</p>
-<h2>ppid 内核模块</h2><hr style="margin-left:40%; margin-right:40%;"/>
+<h2><a data-uk-modal="{target:'#category-id'}">ppid 内核模块</a></h2>
+
 <p>这个模块的主要作用是任何时候显示哪个线程跑在哪个cpu上，主要方式是允许一个用户程序映射一段无cache的连续物理内存缓冲区，ppid主要的工作在初始化和映射，以及一个额外的在内核中schedule处被调用的一个回调函数</p>
 <img src="/static/blogs/2018/03/img/shim_ppid.png" alt="">
-<h3>回调函数</h3>
+<h3><a data-uk-modal="{target:'#category-id'}">回调函数</a></h3>
+
 <p>回调函数主要就是在内核的schedule函数结尾处加了个指针，指向我们将在初始化时指定的函数，该函数主要功能为获取下一个要执行的线程的id及cpu的编号，并一起存入初始化时分配的内存中。因为要对schedule函数进行改动，所以利用如下补丁对linux源码进行改动，改动完后需要重新编译内核源码安装，并选择对应内核重新启动</p>
 <pre class="brush: c;">
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
@@ -31,7 +33,8 @@ index 649c9f8..e5a02fd 100644
 
  static inline void sched_submit_work(struct task_struct *tsk)
 </pre>
-<h3>模块初始化 ppid_map_init</h3>
+<h3><a data-uk-modal="{target:'#category-id'}">模块初始化 ppid_map_init</a></h3>
+
 <p>ppid模块初始化的过程中，主要利用了 dma_alloc_coherent 函数分配了一段无cache的连续内存，dma_alloc_coherent这个函数本来是为DMA设备进行内存分配的，在被调用时实际上是会返回两个值</p>
 <ul><li>函数的返回值，void *类型，代表缓冲区的内核虚拟地址</li>
 <li>dma_handle保存相关的总线地址，即物理地址，为DMA设备所用</li>
@@ -50,9 +53,11 @@ echo $deviceID
 mknod /dev/ppid_map c $deviceID 0
 ls -lh /dev/ppid_map
 </pre>
-<h3>文件操作映射过程 .mmap = mmap_mmap</h3>
+<h3><a data-uk-modal="{target:'#category-id'}">文件操作映射过程 .mmap = mmap_mmap</a></h3>
+
 <p>映射过程主要利用dma_mmap_coherent函数将分配的dma无cache内存区域与用户进程的虚拟内存块vma进行挂钩，使得用户进程能对分配的内存进行访问</p>
-<h3>example</h3>
+<h3><a data-uk-modal="{target:'#category-id'}">example</a></h3>
+
 <p>如下为一个ppid模块的测试程序</p>
 <pre class="brush: c;">
 /**
@@ -122,7 +127,8 @@ CPU6: tgid -1 pid -1
 CPU7: tgid -1 pid -1
 ...
 </pre>
-<h2>shim 核心代码</h2><hr style="margin-left:40%; margin-right:40%;"/>
+<h2><a data-uk-modal="{target:'#category-id'}">shim 核心代码</a></h2>
+
 <p>主要数据结构如下</p>
 <pre class="brush: c;">
 struct shim_hardware_event {
@@ -145,13 +151,16 @@ struct shim_worker_struct{
 </pre>
 <img src="/static/blogs/2018/03/img/shim_core.PNG" alt="">
 <p>作者在shim中提供了一些基本的函数，如relax_cpu释放cpu控制权，作用相当于机器指令中的pause， 另外rdtsc用来获取当前的周期数，get_cpuid用来获取cpuid。主要部分还是对于perfmon库提供的函数进行的封装。</p>
-<h3>shim初始化</h3>
+<h3><a data-uk-modal="{target:'#category-id'}">shim初始化</a></h3>
+
 <p>利用perf库的 pfm_initialize()函数来查询有效PMU事件进行激活</p>
 <p>创建数据结构，对输入的不同名称的事件进行相应的创建及初始化工作</p>
-<h3>数据读取及可信赖度</h3>
+<h3><a data-uk-modal="{target:'#category-id'}">数据读取及可信赖度</a></h3>
+
 <p>在函数shim_read_counters中shim两次调用rdtsc进行测量当前的周期数，并在两次读取中间进行各种事件的测量工作，若前后两次read_counters的end之差值和begin之差值在可信赖范围内相同，则可认为shim对测量没有影响。</p>
 <img src="/static/blogs/2018/03/img/shim_core2.PNG" alt="">
-<h3>example</h3>
+<h3><a data-uk-modal="{target:'#category-id'}">example</a></h3>
+
 <p>利用<code>gcc *.c -o shim -lpthread -lpfm</code>对如下示例程序进行编译执行，可进行测试</p>
 <pre class="brush: c;">
 /*
@@ -189,7 +198,8 @@ main(int argc, char **argv)
  }
 }
 </pre>
-<h3>结果</h3>
+<h3><a data-uk-modal="{target:'#category-id'}">结果</a></h3>
+
 <p>使用 <code>perf list</code> 可以查看有哪些perf事件可以测量，如下为测量branch-instructions branch-misses bus-cycles instructions cpu-cycles的结果</p>
 <pre class="brush: perl;">
 >./shim branch-instructions branch-misses bus-cycles instructions cpu-cycles ref-cycles

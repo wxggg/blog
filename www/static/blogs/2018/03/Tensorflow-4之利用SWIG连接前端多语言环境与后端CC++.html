@@ -1,6 +1,7 @@
 <p>Tensorflow 源码中python API和底层c/c++之间的关联主要是靠 <code>SWIG</code> 来完成的，这是一个用于把C/C++集成到其他语言中的编译器。本文主要介绍swig以及tensorflow如何利用swig关联前后端，另外主要介绍了一下Session的生命周期。</p>
 <p>http://www.swig.org/</p>
-<h2>SWIG实例之python调用C</h2><hr style="margin-left:40%; margin-right:40%;"/>
+<h2><a data-uk-modal="{target:'#category-id'}">SWIG实例之python调用C</a></h2>
+
 <p>首先准备C语言函数</p>
 <pre class="brush: c++;">
 /* File : example.c */
@@ -38,7 +39,8 @@ extern int fact(int n);
 extern int my_mod(int x, int y);
 extern char *get_time();
 </pre>
-<h3>编译</h3>
+<h3><a data-uk-modal="{target:'#category-id'}">编译</a></h3>
+
 <p>需要安装swig，Ubuntu环境执行 <code>sudo apt-get install swig </code>，然后执行如下指令，会生产<code>example.py</code> 和 <code>example_wrap.c</code> 两个文件</p>
 <pre class="brush: perl;">
 $swig -python example.i
@@ -63,7 +65,8 @@ $ld -shared example.o example_wrap.o -o _example.so
 </pre>
 <p>到这里时执行会报错，_ld: example_wrap.o: relocation R_X86_64_32S against .rodata can not be used when making a shared object; recompile with -fPIC_</p>
 <p>这里在上一个环节gcc编译的时候加上<code>-fPIC</code>即可，如 <code>gcc -fPIC -c ...</code>，然后再执行对应的链接<code>ld</code>操作，就可以生成对应的共享库 <code>_example.so</code></p>
-<h3>使用python模块</h3>
+<h3><a data-uk-modal="{target:'#category-id'}">使用python模块</a></h3>
+
 <p>可以如下用Python调用example中的函数</p>
 <pre class="brush: python;">
 >>> import example
@@ -75,11 +78,13 @@ $ld -shared example.o example_wrap.o -o _example.so
 'Sun Mar 18 12:59:22 2018\n'
 >>>
 </pre>
-<h2>Tensorflow中Session生命周期</h2><hr style="margin-left:40%; margin-right:40%;"/>
+<h2><a data-uk-modal="{target:'#category-id'}">Tensorflow中Session生命周期</a></h2>
+
 <p>tensorflow利用swig包装C/C++实现系统，tensorflow使用Bazel来构建，在编译之前启动swig的代码生成过程，tensorflow中Session的swig接口文件为 <code>tf_session.i</code> 会生成适配文件：<code>pywrap_tensorflow.py</code> 和 <code>pywrap_tensorflow.cpp</code>，在编译之后会生成共享库 <code>_pywrap_tensorflow.so</code>。</p>
 <p>类似于上述的swig例子，在<code>pywrap_tensorflow.cpp</code>中同样静态注册了一个函数符号表，在运行时会对Python的函数名称匹配找到对应的C函数实现，最终转到<code>c_api.c</code></p>
 <img src="https://upload-images.jianshu.io/upload_images/2254249-6b09734b9eb93e83.png" alt="">
-<h3>Session 在Python中的创建过程</h3>
+<h3><a data-uk-modal="{target:'#category-id'}">Session 在Python中的创建过程</a></h3>
+
 <p>当client启动Session执行之前，先创建一个Session实例，进而调用父类BaseSession的构造函数，这里开始调用swig创建的包装Python库<code>pywrap_tensorflow</code>的函数</p>
 <p><code>tf_session.TF_NewSessionOptions</code>等来创建或删除Session 。 而且从BaseSession的构造函数中也可以看到，如果没有初始化graph的话，会调用一个default的graph</p>
 <pre class="brush: python;">
@@ -105,7 +110,8 @@ class BaseSession(SessionInterface):
     # other code
 </pre>
 <p>从这里开始就经过swig包装的中间层之后，就能够调用共享库中的C语言API了，同样在<code>pywrap_tensorflow.cpp</code>中也静态注册了函数调用的符号表</p>
-<h3>Session 在C/C++中的生命周期</h3>
+<h3><a data-uk-modal="{target:'#category-id'}">Session 在C/C++中的生命周期</a></h3>
+
 <p>以调用新API为例，在BaseSession的初始化时会调用pywrap_tensorflow的TF_NewSession，并进一步通过swig调用c_api中的函数<code>TF_NewSession</code></p>
 <pre class="brush: c;">
 TF_Session* TF_NewSession(TF_Graph* graph, const TF_SessionOptions* opt,
@@ -147,13 +153,15 @@ Status NewSession(const SessionOptions&  options, Session** out_session) {
 </pre>
 <p>在C++系统中，SessionFactory根据前端传递的<code>Session.target</code>来多态创建Session对象，如DirectionSession将启动本地运行模式，而GrpcSession将启动给予RPC的分布式运行模式</p>
 <img src="https://upload-images.jianshu.io/upload_images/2254249-6f041f03334e53a1.png" alt="">
-<h3>创建扩展运行graph</h3>
+<h3><a data-uk-modal="{target:'#category-id'}">创建扩展运行graph</a></h3>
+
 <p>Python前端调用<code>Session.run</code>时，会将构造好的graph以<code>GraphDef</code>的形式发给C++，每次调用run都会将新增节点的graph发给C++后端用于extend原来的graph</p>
 <img src="https://upload-images.jianshu.io/upload_images/2254249-32a40ff3a1852e28.png" alt="">
 <p>后端系统每次<code>Session.run</code>执行被称为一次step， 每次step计算图会正想计算网络的输出，反向传递梯度，并完成训练参数的更新，后端系统根据<code>Feed</code>和<code>Fetch</code>对整个graph进行剪枝，得到一个最小依赖的计算子图（称为client graph）</p>
 <p>在运行时会启动设备分配算法，如果节点之间的边横跨了设备，则将该边分裂，插入<code>Send</code>和<code>Recv</code>节点，实现通信。然后将子图片段（partition graph）注册到相应设备并启动执行。</p>
 <img src="https://upload-images.jianshu.io/upload_images/2254249-8e6f49ede17e91f8.png" alt="">
-<h3>关闭和销毁Session</h3>
+<h3><a data-uk-modal="{target:'#category-id'}">关闭和销毁Session</a></h3>
+
 <p>主动调用<code>sess.close</code>之后进行Session的关闭，关闭之后Python前端会启动GC进行垃圾回收，当<code>Session.<strong>del</strong></code>被调用后，启动后台C++的Session对象销毁过程。</p>
 <p>参考文章：</p>
 <ul><li>https://www.jianshu.com/p/667cbb20d802</li>

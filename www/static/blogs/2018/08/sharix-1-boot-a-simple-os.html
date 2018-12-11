@@ -7,9 +7,11 @@
 <p>* <a href="https://github.com/sharixos/sharix/releases/tag/v0.01">sharix v0.01</a></p>
 <p>* <a href="https://github.com/sharixos/sharix/releases/tag/v0.02">sharix v0.02</a></p>
 <p>As we all know that operating system is actually a complex and basic program which is quite close to the hardware. So to build a simple os, we need to know about the cpu and some hardware mechanism. Otherwise it is very useful to learn the AT&T assembling language, this will be really helpful at the begin and even later part of sharix.</p>
-<h2>boot a simple kernel</h2><hr style="margin-left:40%; margin-right:40%;"/>
+<h2><a data-uk-modal="{target:'#category-id'}">boot a simple kernel</a></h2>
+
 <p>As we all know that bios has done much of the initial work for us, so that we can just access the information by the bios interrupt. The bios also offer us with an entry of program, the entry is the famous 0x07c00 address, we should put the boot section of our os code to this, so that the whole of our system can be booted .</p>
-<h3>bootsect</h3>
+<h3><a data-uk-modal="{target:'#category-id'}">bootsect</a></h3>
+
 <p>In sharix, the start symbol below will be loaded to the 0x07c00, and it will clear the register: [%ax %ds %es %ss], and then jmp to main. This code stays in boot/bootasm.S, the file will be compiled and linked to a 512B size file, and be the boot section.</p>
 <pre class="brush: c;">
 start:
@@ -27,7 +29,8 @@ main:
 spin:
 	jmp spin
 </pre>
-<h3>the next 2 section</h3>
+<h3><a data-uk-modal="{target:'#category-id'}">the next 2 section</a></h3>
+
 <p>As has mentioned above, the bootsect instructioin will load the left 2 section to 0x7e00, and then the PC should go to 0x07e00 to run the left instructioin.</p>
 <p>The next 2 section code locates in intbios/asmhead.S, this file actually do much of the initial work in real mode.</p>
 <pre class="brush: c;">
@@ -54,7 +57,8 @@ spin:
 # Switches processor into 32-bit mode.
 		ljmp $PROT_MODE_CSEG, $protcseg
 </pre>
-<h3>to summarize</h3>
+<h3><a data-uk-modal="{target:'#category-id'}">to summarize</a></h3>
+
 <p>set video mode and store the information of video to a certain place</p>
 <p>Enable A20, probe the memory and store the information of memory to a certain place</p>
 <p>set the GDT(global description table) register gdtdesc</p>
@@ -76,33 +80,40 @@ protcseg:
 
 call bootmain
 </pre>
-<h3>why divide</h3>
+<h3><a data-uk-modal="{target:'#category-id'}">why divide</a></h3>
+
 <p>I have attemped to do the work above just in the bootsect, and it didn't work because the bootsect is too small. You might not encounter this problem if you do not need the graphical mode.</p>
 <p>When i once added the graphical set code to the bootsect, it becomes bigger then 512B, which is unacceptable for a boot section. So i let the bootsect do only the work to load the other section and jmp to them, this enlarge the size to execute the 16bit code by which can we use the bios interrupt.</p>
-<h3>call kern_entry</h3>
+<h3><a data-uk-modal="{target:'#category-id'}">call kern_entry</a></h3>
+
 <p>We have compiled the kernel to an ELF format file and now just need to read and resolve the ELF file.</p>
 <pre class="brush: c;">
     // call the entry point from the ELF header
     // note: does not return
     ((void (*)(void))(ELFHDR->e_entry &  0xFFFFFF))();
 </pre>
-<h2>the real mode and protected mode</h2><hr style="margin-left:40%; margin-right:40%;"/>
+<h2><a data-uk-modal="{target:'#category-id'}">the real mode and protected mode</a></h2>
+
 <p>In real mode of x86 architecture, we use cs:ip as the address to access memory, the cs and ip are 16bit register, so that we can access 20bit address, which means we can access 1MB memory. This is because we use cs*16+ip as the real memory address, and the memory has been designed using 20 address lines.</p>
 <p>The name "real mode" means the cs:ip address is the actural physical address to access.</p>
-<h3>protected mode</h3>
+<h3><a data-uk-modal="{target:'#category-id'}">protected mode</a></h3>
+
 <p>In protected mode, we can use 32bit register and also 32 lines of address to access memory, which means we can access up to 4GB memory. We can use segments and paging when we  are in protected mode.</p>
 <p>The reason why it is called protected mode is that we can control the permission of segment by cs</p>
-<h3>global descriptor table</h3>
+<h3><a data-uk-modal="{target:'#category-id'}">global descriptor table</a></h3>
+
 <p>The global descriptor table is an array that holds multiple segment descriptors, whose starting address is stored in the global descriptor table register GDTR. GDTR is 48 bits long, in which 32 bits are base addresses, and 16 bits are segment boundaries.</p>
 <p>The global descriptor table register (Global, Descriptor, Register, GDTR): points to the global segment descriptor table GDT Table</p>
 <p>The local descriptor table register (Local Descriptor Table Register): points to the local segment descriptor table LDT LDTR</p>
 <p>Register Descriptor Table</p>
 <p>(IDTR): points to a table containing the entry point of the interrupt handler subroutine (IDT). (Interrupt)</p>
 <p>Task register (Task, Register, TR): this register points to the current task information store, which is needed for the processor to perform task switching.</p>
-<h2>GDT</h2><hr style="margin-left:40%; margin-right:40%;"/>
+<h2><a data-uk-modal="{target:'#category-id'}">GDT</a></h2>
+
 <p>GDT is an important table of os, the address of the table is stored in a register called GDTR. The machine will mainly use this to know the exact address of a CS value. In sharix, we will change this table several times to fit different situations.</p>
 <p>About real mode addressing, in 16-bit mode, the CS register stores the real address of instruction. So there is no need to set the GDTR register.</p>
-<h3>set gdt</h3>
+<h3><a data-uk-modal="{target:'#category-id'}">set gdt</a></h3>
+
 <p>set GDT before entering protected mode</p>
 <p>There are two methods of memory protection in x86 architecture, paging and segmentation. Before we enter protected mode, we have to set gdt by lgdt.</p>
 <pre class="brush: c;">
@@ -134,7 +145,8 @@ gdtdesc:
     .byte (((base) >> 16) &  0xff), (0x90 | (type)),             \
         (0xC0 | (((lim) >> 28) &  0xf)), (((base) >> 24) &  0xff)
 </pre>
-<h3>set gdt again</h3>
+<h3><a data-uk-modal="{target:'#category-id'}">set gdt again</a></h3>
+
 <p>set GDT after kern_entry in entry.S (optional)</p>
 <p>If we have set the loaded address of kernel at 0xC0100000, then we have to reset the GDT. Otherwise, if not, we can just go to kern_init in init.c, and continue our system. Here is the main operation in entry.S:</p>
 <pre class="brush: c;">
@@ -181,7 +193,8 @@ bootstack:
 	.global bootstacktop
 bootstacktop:
 </pre>
-<h3>gdb</h3>
+<h3><a data-uk-modal="{target:'#category-id'}">gdb</a></h3>
+
 <p>We have set the gdt, and there are some complex changes between the real physical address and the virtual address or linear address.</p>
 <p>In sharix, we can use <code>make debug</code> and the with gdb tools to see the memory.</p>
 <pre class="brush: c;">
@@ -225,7 +238,8 @@ save_video_mode_info: // save binfo to physical 0x0
 struct BOOTINFO *binfo = (struct BOOTINFO *) ADR_BOOTINFO;
 cprintf("scrnx:%d  scrny:%d\n", binfo->scrnx, binfo->scrny);
 </pre>
-<h3>set gdt once again</h3>
+<h3><a data-uk-modal="{target:'#category-id'}">set gdt once again</a></h3>
+
 <p>set gdt the last time in pmm_init after paging.</p>
 <pre class="brush: c;">
 static struct segdesc gdt[] = {

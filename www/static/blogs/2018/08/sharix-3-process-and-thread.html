@@ -1,5 +1,6 @@
 <p>The task switch method in sharix is software switch, so it is mainly about context switch and the change of the register value and there's nothing about TSS segments at the first time. When it is time to add the user process model in sharix, the TSS will be needed because we need it to change the esp0 and ss0 to change the privilege from ring3 to ring0.</p>
-<h2>init process structure</h2><hr style="margin-left:40%; margin-right:40%;"/>
+<h2><a data-uk-modal="{target:'#category-id'}">init process structure</a></h2>
+
 <pre class="brush: c;">
 // process's state in his life cycle
 enum proc_state {
@@ -20,7 +21,8 @@ struct proc_struct {
   list_entry_t list_link;
 };
 </pre>
-<h2>idleproc</h2><hr style="margin-left:40%; margin-right:40%;"/>
+<h2><a data-uk-modal="{target:'#category-id'}">idleproc</a></h2>
+
 <p>kernel memory & registers</p>
 <p>In entry.S, CS has been set $KERNEL_CS, and DS & ES & SS has been set KERNEL_DS, The stack space is as follows:</p>
 <pre class="brush: c;">
@@ -54,7 +56,8 @@ es             0x10	16
 fs             0x23	35
 gs             0x23	35
 </pre>
-<h2>several process state</h2><hr style="margin-left:40%; margin-right:40%;"/>
+<h2><a data-uk-modal="{target:'#category-id'}">several process state</a></h2>
+
 <p>To clarify the process switch, there is only two kernel threads now in sharix. One is idleproc and another is thread1. The process thread1 is used to test the correctness of process, and it is created by kernel_thread function as follows:</p>
 <pre class="brush: c;">
 int pid = kernel_thread(thread1, NULL);
@@ -62,7 +65,8 @@ struct proc_struct * proc = find_proc(pid);
 print_proc(proc);
 proc_run(proc);
 </pre>
-<h3>1) process idle structure value:</h3>
+<h3><a data-uk-modal="{target:'#category-id'}">1) process idle structure value:</a></h3>
+
 <pre class="brush: c;">
 ------------------- [info process] ---------------
 state: runnable
@@ -81,7 +85,8 @@ ebp: 0
 cr3: 7fdf000
 time_slice: 0
 </pre>
-<h3>2) created pid1 process value:</h3>
+<h3><a data-uk-modal="{target:'#category-id'}">2) created pid1 process value:</a></h3>
+
 <pre class="brush: c;">
 ------------------- [info process] ---------------
 state: uninitialized
@@ -117,7 +122,8 @@ trapframe at 0xc7e51fbc //proc->tf = (struct trapframe *)(proc->kstack + PGSIZE)
 cr3: 7fdf000
 time_slice: 0
 </pre>
-<h2>proc_run then switch_to</h2><hr style="margin-left:40%; margin-right:40%;"/>
+<h2><a data-uk-modal="{target:'#category-id'}">proc_run then switch_to</a></h2>
+
 <pre class="brush: c;">
 struct context {
     uint32_t eip;
@@ -164,7 +170,8 @@ switch_to:                      # switch_to(from, to)
     ret
 </pre>
 <p>The switch_to is likely to break the procedure of function call and return. Because a call means a push eip and then jmp, the to_switch use this to change the eip to return so as to change the process to run. Because there is nothing about the privilege, it will be fine to switch process like this.</p>
-<h2>kern_thread_entry:</h2><hr style="margin-left:40%; margin-right:40%;"/>
+<h2><a data-uk-modal="{target:'#category-id'}">kern_thread_entry:</a></h2>
+
 <p>Now %eip = kern_thread_entry and %ebx = thread1, %edx = arg, so the kern_thread_entry is used to enter the thread1. But why it bothers so much to design such a complex procedure, because if we just set the eip as thread1, we still can switch to function thread1. The reason for this is that it is a little complex to do some work after a thread has returned. So there is kernel_thread_entry to call *%ebx and the use do_exit to do the exit work.</p>
 <pre class="brush: c;">
 .text
@@ -177,4 +184,5 @@ kernel_thread_entry:        # void kernel_thread(void)
     pushl %eax              # save the return value of fn(arg)
     call do_exit            # call do_exit to terminate current thread
 </pre>
-<h2>exit_thread</h2><hr style="margin-left:40%; margin-right:40%;"/>
+<h2><a data-uk-modal="{target:'#category-id'}">exit_thread</a></h2>
+

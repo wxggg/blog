@@ -1,13 +1,16 @@
 <p>关于libevent除了对于信号和超时的处理，最核心的部分其实是对于多路IO复用的封装。IO复用存在多种方式，包括select、poll、kqueue及epoll等多种接口。libevent的实现中用C语言以类似面向对象的方式来将这多种IO复用方式进行封装，对于我们的libevent-cpp而言，可以直接使用父子继承来实现各种不同的IO方式。本文主要介绍一下select机制以及libevent中使用select来处理IO读写事件的方式，然后深入Linux内核介绍一下select的实现机制。</p>
-<h2>读写事件管理及select机制</h2><hr style="margin-left:40%; margin-right:40%;"/>
+<h2><a data-uk-modal="{target:'#category-id'}">读写事件管理及select机制</a></h2>
+
 <p></p>
-<h3>select机制</h3>
+<h3><a data-uk-modal="{target:'#category-id'}">select机制</a></h3>
+
 <p>如下为select函数及对应的参数，参数中最重要的数据类型就是fd_set数组对应的读描述符集合和写描述符集合，其中分别保存着读写描述符的信息，进程首先会睡眠于select函数，之后一旦读或者写描述符集合中的某个fd满足读或者写了，那么select就会返回，然后进程处理对应描述符的读写。</p>
 <pre class="brush: c++;">
 int select(int nfds, fd_set *readfds, fd_set *writefds,
                   fd_set *exceptfds, struct timeval *timeout);
 </pre>
-<h3>select_base 管理读写事件</h3>
+<h3><a data-uk-modal="{target:'#category-id'}">select_base 管理读写事件</a></h3>
+
 <p>之前提到对于信号事件和超时事件都有着对应的数据结构来保存加入的事件，信号事件是使用列表而超时事件为了满足有序和快速使用了set数据结构。对于select管理的读写事件而言，我们希望能够保存加入的读写事件，当然也希望能够有一个fd到读写事件rw_event的对应关系，因而使用map就比较方便，在libevent原始代码中是使用一个很大的数组来表示对应关系，并使用数组下表表示描述符。另外对于select函数的参数最好也能够统一管理，这样就有了如下的select_base读写事件管理类</p>
 <pre class="brush: c++;">
 class select_base : public event_base
@@ -89,9 +92,11 @@ int select_base::dispatch(struct timeval *tv)
 }
 </pre>
 <p>当select函数因为出现读写而返回时，其实是有些描述符满足了读或者写，在之后分别遍历保存文件描述符和对应读写事件的映射<code>fd_map_rw</code>，将其中出现读写的事件进行激活，并从映射中移出，这样之后进行激活事件处理的时候就能调用对应事件的回调函数进行相关读写事件的处理了。</p>
-<h2>Linux内核select机制实现原理</h2><hr style="margin-left:40%; margin-right:40%;"/>
+<h2><a data-uk-modal="{target:'#category-id'}">Linux内核select机制实现原理</a></h2>
+
 <p>就Linux而言，库函数<code>select</code>最终会通过系统调用进入内核态，然后由内核进行相关的处理，Linux内核中对于select的支持从Linux-2.0版本之后才开始加入，所以这里本文主要就Linux-2.0.1版本进行分析，主要代码位于内核<code>fs/select.c</code>中。</p>
-<h3>select的内核实现-sys_select</h3>
+<h3><a data-uk-modal="{target:'#category-id'}">select的内核实现-sys_select</a></h3>
+
 <p>如下的内核函数<code>sys_select</code>对应着用户态<code>select</code>函数的实现，可以看到参数类型完全相同，但是sys_select函数其实并没有真正的处理读写文件描述符集合，因为传入的指针如<code>fd_set *inp</code>是用户态的描述符集合数组，首先需要将用户态的数据复制到内核态的<code>in</code>，并且同时需要处理超时timeout，并设置进程的超时时间为timeout，然后调用<code>do_select</code>真正的进行处理相关描述符集合，处理完之后出现了读写导致某个描述符被修改，然后需要将得到的内核态结果如<code>fd_set *res_in</code>传回到用户态数据 <code>fd_set *inp</code>。</p>
 <pre class="brush: c++;">
 asmlinkage int sys_select(int n, fd_set *inp, fd_set *outp, fd_set *exp, struct timeval *tvp)
@@ -127,9 +132,11 @@ asmlinkage int sys_select(int n, fd_set *inp, fd_set *outp, fd_set *exp, struct 
 	return i;
 }
 </pre>
-<h3>轮询检查描述符集合-do_select</h3>
+<h3><a data-uk-modal="{target:'#category-id'}">轮询检查描述符集合-do_select</a></h3>
+
 <p>关于<code>do_select</code> 函数，主要其实就是轮询检查描述符集合中是否出现io操作，并分别进行处理。主要操作在如下for循环中，依次检查每个文件描述符，以及通过文件描述符检查对应的文件是否出现io操作，在此之前将进程的状态设置为TASK_INTERRUPTIBLE，表示当前进程可以被信号和wakeup唤醒。轮询判断之后，如果没有io操作且没有超时且出现的信号不是非阻塞的就继续调度。</p>
-<h4>关于TASK_INTERRUPTIBLE状态</h4>
+<h4><a data-uk-modal="{target:'#category-id'}">关于TASK_INTERRUPTIBLE状态</a></h4>
+
 <p>进程处于TASK_INTERRUPTIBLE状态意味着该进程会从就绪进程队列中被移除，也就是说在以后的调度函数<code>schedule</code>执行时，处于TASK_INTERRUPTIBLE状态的进程不会被调度，这样的目的是让<code>select</code>函数不会处于忙等待的状态，也就是没有io操作或超时或信号等的时候不会浪费cpu一直查询。而当前进程处于TASK_INTERRUPTIBLE状态时，只有两种方式会被唤醒，一种是出现了中断或者说有针对当前进程的信号出现，另外一种是当前进程被<code>wakeup</code>了，实际上是通过<code>wakeup</code>来唤醒当前进程，这就涉及到Linux对于文件的处理，与检查函数<code>check</code>有关。</p>
 <pre class="brush: c++;">
 static int do_select(int n, fd_set *in, fd_set *out, fd_set *ex,
@@ -176,7 +183,8 @@ repeat:
 	return count;
 }
 </pre>
-<h3>Linux文件底层操作及select检查-check</h3>
+<h3><a data-uk-modal="{target:'#category-id'}">Linux文件底层操作及select检查-check</a></h3>
+
 <p>首先对于文件而言，其接口如<code>read</code>、<code>write</code>及 <code>select</code>等操作都与驱动程序有关，对于不同的读写设备而言，可能需要不同的接口实现，当然，最终不同的设备在Linux中都被统一为文件操作，就是通过文件操作接口抽象来进行的。这里的check函数会调用底层的<code>select</code>函数来判断文件是否准备好了，如果准备好了后面进程就可以进行相关处理，如果没有准备好的话，当前进程会被加到这个文件的等待队列中，以后一旦这个文件准备好了，内核就会唤醒这个状态为TASK_INTERRUPTIBLE的进程，然后继续上述的<code>do_select</code>后面的操作，包括释放等待列表，并将状态重新设置为可调度状态也就是TASK_RUNNING。</p>
 <pre class="brush: c++;">
 /*
@@ -221,7 +229,8 @@ struct file_operations {
 	int (*revalidate) (kdev_t dev);
 };
 </pre>
-<h2>小结</h2><hr style="margin-left:40%; margin-right:40%;"/>
+<h2><a data-uk-modal="{target:'#category-id'}">小结</a></h2>
+
 <ul><li>文本主要介绍libevent对底层io复用接口之一select的封装</li>
 <li>对于Linux内核中select的实现机制介绍主要基于linux-2.0.1的代码，更新的Linux可能有所不同</li>
 <li>项目地址 <a href="https://github.com/wxggg/libevent-cpp">libevent-cpp</a></li>

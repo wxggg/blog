@@ -71,11 +71,13 @@ void sig_handler (int sig)
 </pre>
 <p>如果数据被修改或在信号处理程序中读取，如果仅在信号被阻塞的部分发生，则无需担心是否修改或读取了程序中的数据。但仍然需要 <code>volatile</code> 关键字。</p>
 <p>程序接收到信号的时候是被中断的，而这个中断不知道在合适何处发生，所以在信号处理函数中应该进尽可能的使用安全的函数（signal-safe）。能够在信号处理函数中安全使用的函数列表并不是很多，包括如 <code>waitpid</code> 和 <code>wait</code> 函数来清理退出的子进程信号 SIGCHLD等。</p>
-<h4>使用 signalfd() 来处理信号</h4>
+<h4><a data-uk-modal="{target:'#category-id'}">使用 signalfd() 来处理信号</a></h4>
+
 <p><code>signalfd</code> 是一个较新的Linux接口用来处理信号，允许使用文件描述符来接收信号，这样就可以同步的进行信号处理， 使用例子可以看 <a href="http://www.linuxprogrammingblog.com/code-examples/signalfd">signalfd</a>。</p>
 <p>使用 <code>signalfd</code> 之前需要使用 <code>sigprocmask</code> 来阻塞想要处理的信号，然后调用 <code>signalfd</code> 函数会创建一个用来读入信号的文件描述符，通过这种方式传递给进程的 SIGTERM 或者 SIGINT 等信号就不会被中断，信号处理函数也不会被调用。信号会排队，程序可以从文件描述符中获取到传递来的信号，并且需要提供足够大的缓冲来读取 <code>struct signalfd_siginfo</code> 对象，其中保存着之前提到的 <code>siginfo_t</code> 类型的信息。因为访问的是文件描述符，所以可以像操作文件描述符一样操作，也可以使用 <code>select</code> 、<code>poll</code> 等函数。</p>
 <p>在使用 <code>poll</code> 这样的函数来处理连接的单进程服务器中使用 <code>signalfd</code> 非常方便，其简化了信号处理，因为信号描述符可以添加到 <code>poll</code> 的描述符数组中，并像其他描述符一样操作，而不需要异步操作，程序不会被中断。</p>
-<h4>进程收到信号时的操作</h4>
+<h4><a data-uk-modal="{target:'#category-id'}">进程收到信号时的操作</a></h4>
+
 <p>对于每个信号都有一个默认的处理操作，当没有提供信号处理函数并且没有阻塞信号的时候会被执行，比如终止进程，大部分的信号都会造成进程的终止，比如 SIGTERM 、SIGQUIT、SIGPIPE、SIGUSR1等。默认操作还包括终止进程并造成代码崩溃，比如 SIGSEGV、SIGILL和SIGABRT等。少数像 SIGCHLD 这样的信号会被忽略。 SIGSTOP和SIGCOND分别造成程序的挂起和继续，比如CTRL-Z时就会发送 SIGSTOP 信号。</p>
 <p>如果设置了信号处理函数就需要准备好有些系统调用被信号中断的情况，尽管没有设置信号处理函数也有可能被信号中断。一般来说立即返回的函数如分配一个socket的函数 <code>socket</code> 不用等待IO操作，这样的函数不会被中断。而其他的函数需要等待如网络传输、管道读取以及显示地睡眠等是有可能被中断的，如 <code>select</code> 、<code>read</code> 及 <code>connect</code> 等函数</p>
 <pre class="brush: c;">
@@ -104,7 +106,8 @@ int main (int argc, char *argv[])
 }
 </pre>
 <p>对于传输数据的函数如 <code>recv</code> 、<code>write</code> 和类似的 <code>select</code> 函数可能会被信号中断，所以需要进行继续接收数据，重启 <code>select</code> 等操作，参看里子 <a href="http://www.linuxprogrammingblog.com/code-examples/handling-interruption-of-system-calls-by-signals">how to handle interruption of system calls</a> 。</p>
-<h2>阻塞信号</h2><hr style="margin-left:40%; margin-right:40%;"/>
+<h2><a data-uk-modal="{target:'#category-id'}">阻塞信号</a></h2>
+
 <p>有时候需要阻塞收到的信号而不是处理它们，传统的方式是使用 SIG_IGN常量作为信号处理函数，现在推荐的方式都是使用 <code>sigprocmask</code> 函数，可以查看例子</p>
 <pre class="brush: c;">
 /** This program blocks SIGTERM signal for 10 seconds using sigprocmask(2)
@@ -163,24 +166,30 @@ int main(int argc, char *argv[])
 }
 </pre>
 <p>程序会睡眠并且忽略 SIGTERM 信号，因为使用了 <code>sigprocmask</code> 阻塞了该信号，该信号会在内核中排队，并在程序不阻塞该信号的时候被传递到进程中。其中 <code>sigset_t</code> 类型表示信号集合，而不是一个信号， SIG_BLOCK 参数表明这个集合中的信号全部都被阻塞，而 SIG_SETMASK 参数表示在集合中的信号被阻塞，而不在该集合中的信号就不会被阻塞，所以这里用来进行解除阻塞的操作。</p>
-<h4>避免竞争条件</h4>
+<h4><a data-uk-modal="{target:'#category-id'}">避免竞争条件</a></h4>
+
 <p>对于使用 <code>select</code> 和 <code>accept</code> 会产生竞争的例子：<a href="http://www.linuxprogrammingblog.com/code-examples/signal-race-select-accept">Signal race with select( and accept(</a> 。这个例子使用 <code>select</code> 因为其侦听多个接口也可也等待传入连接以外的某些事件。希望能够使用SIGTERM之类的信号干净的关闭它（如删除PID文件、等待挂起的连接完成等）。为了做到这一点，定义了一个信号处理函数设置全局标志并且当信号到达的时候<code>select</code> 会被中断。如果程序执行到 <code>select</code> 的时候获得了 SIGTERM 信号，那么程序不会被中断，因为 select 会让程序睡眠直到有它监控的文件描述符准备好了。使用 <code>pselect</code> 可以改进这个程序， <code>select</code> 和 <code>pselect</code> 的区别在于后者提供了 <code>sigset_t</code> 类型的参数，这些信号的集合在系统调用的执行过程中不会被阻塞。</p>
-<h4>等待信号</h4>
+<h4><a data-uk-modal="{target:'#category-id'}">等待信号</a></h4>
+
 <p>如果需要执行一个外部命令并等待其退出，但是又不想一直等待就可以设置一个等待时间，这个过程可以分别使用 <code>fork</code> 或 <code>execve</code> 、<code>sleep</code> 和 <code>sigtimedwait</code> 等来实现，<code>sigtimedwait</code> 能够允许程序在没有竞争的情况下等待一个信号，一个缺点是其被其它的信号中断的时候没有说明已经等待了多少时间，所以不知道什么时候重启是正确的。等待信号也可以使用如 <code>sigsuspend</code> 、<code>sigwaitinfo</code> 及 <code>pause</code> 函数等。</p>
-<h4>发送信号</h4>
+<h4><a data-uk-modal="{target:'#category-id'}">发送信号</a></h4>
+
 <ul><li>发送信号的方式包括从终端输入CTRL-C、CTRL-\及CTRL-Z，分别对应 SIGINT、SIGQUIT和SIGSTOP信号。</li>
 </ul>
 <ul><li>可以使用 <code>kill</code> 来通过进程pid发送信号</li>
 <li>使用 <code>raise</code> 和 <code>abort</code> 可以给进程本身发送信号。</li>
 <li>使用 <code>sigqueue</code> 函数可以同时发送信号和数据，类似 <code>kill</code> 但是有一个 <code>const union sigval</code> 参数可以用来发送一个整型或者指针。</li>
 </ul>
-<h4>实时信号</h4>
+<h4><a data-uk-modal="{target:'#category-id'}">实时信号</a></h4>
+
 <p>POSIX定义了实时信号并且Linux也提供了支持，和标准信号的区别主要在于：</p>
 <ul><li>如果信号在发送时被阻塞，则可以将多个实时信号排队等待该过程，而标准信号只有给定类型中的一个会排队，其余的被忽略</li>
 <li>实时信号的传递顺序会确保与发送顺序相同</li>
 </ul>
-<h4>信号和进程、线程</h4>
+<h4><a data-uk-modal="{target:'#category-id'}">信号和进程、线程</a></h4>
+
 <p>使用 <code>fork</code> 创建子进程时信号队列是空的，尽管有些信号可能在为父进程排队。信号处理函数和阻塞信号状态会被子进程继承，与信号有关的文件描述符的属性也会被继承。</p>
-<h4>参考内容</h4>
+<h4><a data-uk-modal="{target:'#category-id'}">参考内容</a></h4>
+
 <ul><li><a href="http://www.linuxprogrammingblog.com/all-about-linux-signals?page=show">Linux Programming Blog / All about Linux signals</a></li>
 </ul>

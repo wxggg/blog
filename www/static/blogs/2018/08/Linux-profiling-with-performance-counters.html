@@ -1,5 +1,6 @@
 <p>Perf Event is a performance diagnostic tool that is released and maintained with the Linux kernel code. Perf can not only be used to analyze the performance of program, but it can also be used to analyze the performance of Linux kernel.</p>
-<h2>introduction</h2><hr style="margin-left:40%; margin-right:40%;"/>
+<h2><a data-uk-modal="{target:'#category-id'}">introduction</a></h2>
+
 <p>Perf a tool to analyze performance of program. We can use PMU,tracepoint and special counters in kernel to summarize the performance. With perf we can analyze the hardware event at the running time of programs, such as instructions retired and processor clock cycles. You can also analyze software events, such as Page Fault and the switch of process.</p>
 <p>These features make Perf has many abilities to analyze. For example, you can count each instructions in a clock cycle, which called IPC. Lower IPC means the code does not make good use of CPU. Perf can also get function-level sampling of program, so as to understand where is the performance bottlenecks of the program. Perf can also do benchmark to measure the performance of scheduler.</p>
 <img src="http://www.brendangregg.com/perf_events/perf_events_map.png" alt="">
@@ -10,7 +11,8 @@
 <li>Dynamic Tracing</li>
 <li>Timed Profiling</li>
 </ul>
-<h2>background</h2><hr style="margin-left:40%; margin-right:40%;"/>
+<h2><a data-uk-modal="{target:'#category-id'}">background</a></h2>
+
 <p>There are many aspects that can affect the performance of program. For example, if some program can not make full use of cache, the performance will decline.</p>
 <p><strong>a. hardware feature - cache</strong>;Cache is a kind of SRAM, and has a quite high-speed I/O. It is an important part to make full use of cache in improving</p>
 <ul><li><strong>PMU</strong> = performance monitoring unit</li>
@@ -35,12 +37,14 @@
 </ul>
 <img src="http://www.brendangregg.com/perf_events/perf_tracepoints_1700.png" alt="">
 <p><strong>Notice:</strong> Dynamic tracing is unstable, it may break after a kernel update or patch. So use static tracepoints first. But dynamic tracing is useful to an already_running kernel or application.</p>
-<h3>Basic use of Perf</h3>
+<h3><a data-uk-modal="{target:'#category-id'}">Basic use of Perf</a></h3>
+
 <p>You should install perf before using it, to do this you will have to get a distribution of linux higher then 2.6.31. Enter the tools/perf directory and then</p>
 <ul><li>make</li>
 <li>make install</li>
 </ul>
-<h3>perf list</h3>
+<h3><a data-uk-modal="{target:'#category-id'}">perf list</a></h3>
+
 <p>You can use perf list to list all the events that can trigger the perf sampling.</p>
 <pre class="brush: c;">
 List of pre-defined events (to be used in -e):
@@ -114,7 +118,8 @@ List of pre-defined events (to be used in -e):
 </pre>
 <p>There are many reasons causing program to run slow. Some use the cpu most of running time, calls CPU bound, others have much I/O work calls IO bound.</p>
 <p>We can do <strong>gcc -o t1 -g test.c</strong> to compile the file. And then use the perf stat to analyze data.</p>
-<h3>perf stat</h3>
+<h3><a data-uk-modal="{target:'#category-id'}">perf stat</a></h3>
+
 <pre class="brush: c;">
 $perf stat ./t1
 Performance counter stats for './t1':
@@ -136,7 +141,8 @@ Performance counter stats for './t1':
 # by -e you can find some special events
 </pre>
 <p>These data tells us that the program t1 is CPU bound, because task-clock(msec) is 0.993 and close to 1, which means most of its time are CPU bound work.</p>
-<h3>perf top</h3>
+<h3><a data-uk-modal="{target:'#category-id'}">perf top</a></h3>
+
 <p>This function can be used to observe current performance of the system.For example we use the following code to as process t2 to test.</p>
 <pre class="brush: c;">
     while (1)
@@ -170,7 +176,8 @@ PerfTop:    5847 irqs/sec  kernel:12.4%  exact:  0.0% [4000Hz cycles],  (all, 4 
      0.06%  [kernel]                 [k] menu_select
 </pre>
 <p>It is easy to find that the t2 process has taken up so much cpu.We can use <strong>-e</strong> to list some process or functions that cause some certain events.</p>
-<h3>perf record & perf report</h3>
+<h3><a data-uk-modal="{target:'#category-id'}">perf record & perf report</a></h3>
+
 <pre class="brush: perl;">
 $perf record – e cpu-clock ./t1
 $perf report
@@ -202,7 +209,8 @@ $perf report
 # (Tip: Customize output of perf script with: perf script -F event,ip,sym)
 #
 </pre>
-<h3>perf -g record</h3>
+<h3><a data-uk-modal="{target:'#category-id'}">perf -g record</a></h3>
+
 <pre class="brush: c;">
 # Event count (approx.): 261500000
 #
@@ -238,7 +246,8 @@ $perf report
                ...
                ...
 </pre>
-<h2>related information</h2><hr style="margin-left:40%; margin-right:40%;"/>
+<h2><a data-uk-modal="{target:'#category-id'}">related information</a></h2>
+
 <ul><li>http://www.brendangregg.com/perf.html</li>
 <li>https://www.ibm.com/developerworks/cn/linux/l-cn-perf2/</li>
 <li>https://www.intel.com/content/www/us/en/architecture-and-technology/64-ia-32-architectures-software-developer-vol-3b-part-2-manual.html</li>

@@ -7,10 +7,9 @@ def li(line):
     return '<li>'+line.strip()+'</li>'
 
 def headn(n, line):
-    underline = '<h'+str(n)+'>'+line.strip()+'</h'+str(n)+'>'
-    if n==2:
-        return underline + '<hr style="margin-left:40%; margin-right:40%;"/>'
-    return underline
+    ret = '<h' + str(n) + '><a data-uk-modal="{target:\'#category-id\'}">' + line.strip() + '</a></h' + str(n) + '>\n'
+
+    return ret
 
 def blockquote(line):
     return '<blockquote>'+line+'</blockquote>'

@@ -1,5 +1,6 @@
 <p>博客中一直都没有搜索功能，之前学过信息检索的课程，所以现在尝试着利用现代信息检索的方式给博客增加一个本地搜索引擎。主要的步骤包括中英文分词、建立词典和倒排索引表以及根据TF-IDF来进行搜索返回结果的排序。</p>
-<h2>分词</h2><hr style="margin-left:40%; margin-right:40%;"/>
+<h2><a data-uk-modal="{target:'#category-id'}">分词</a></h2>
+
 <p>进行分词之前需要先读取blog的内容，这里采取直接读markdown文件的方式而不是读HTML，可以直接读取关键信息。读取时选择性读取对检索有用的信息，比如对于图片链接或是代码框都应该省去，读完内容后还应该利用正则表达式去除无用的字符，同时进行英文转小写字母的处理。</p>
 <pre class="brush: python;">
 content = re.sub('\W',' ',content).lower().replace('__','')
@@ -13,7 +14,8 @@ wordlist = jieba.lcut_for_search(content)
 while ' ' in wordlist:
     wordlist.remove(' ')
 </pre>
-<h2>构建倒排索引</h2><hr style="margin-left:40%; margin-right:40%;"/>
+<h2><a data-uk-modal="{target:'#category-id'}">构建倒排索引</a></h2>
+
 <p>对于本地博客的搜索，由于数据量比较小，所以可以将倒排索引常驻内存，这里对于一篇blog我以docid, filepath, wordlist, tags这几个属性来构建对象，保存其关键信息。这样在构建倒排索引的时候就可以以docid来代表该文档，用两个全局变量<code>documents</code>和<code>worddoc</code>来分别保存文档信息和倒排索引表，这样在处理搜索请求的时候可以通过这个文件中的search函数来直接访问以及构建的文档信息和倒排索引信息。</p>
 <pre class="brush: python;">
 documents = []
@@ -35,7 +37,8 @@ def init():
                     if docid not in worddoc[word]:
                         worddoc[word].append(docid)
 </pre>
-<h2>搜索</h2><hr style="margin-left:40%; margin-right:40%;"/>
+<h2><a data-uk-modal="{target:'#category-id'}">搜索</a></h2>
+
 <p>对于输入的搜索请求，如果太较真用户的输入的话，可能会得到很少的匹配结果，因为在之前分词的时候就已经进行了停用词去除的操作。所以对于输入的查询请求，仍然可以作类似处理，比如英文全部转为小写字母，然后用jieba分词来获取输入内容的3个关键词，这里只考虑对这3个关键词进行查询，主要是考虑到文档信息较少，若选用的关键词过多可能找不到匹配内容。当然对于每一个关键词的查询结果，需要取交集以满足所有请求信息。而且这里对于不包含在倒排索引词典中的关键字作弃置处理。</p>
 <pre class="brush: python;">
 def search(content):
@@ -61,7 +64,8 @@ for docid in result:
 result = [k for k,v in sorted(resultdict.items(), key=lambda d: d[1], reverse=True)]
 return result
 </pre>
-<h3>关于TF-IDF</h3>
+<h3><a data-uk-modal="{target:'#category-id'}">关于TF-IDF</a></h3>
+
 <p>上面检索的功能其实都是基于TF-IDF来实现的，这是一个简单但是非常使用的方法，TF就是term frequence，也就是词项频率，而IDF是inverse document frequence，也就是逆文档频率。TF也就是该词项在所有文档中出现的次数进行加和，而IDF的计算方式为</p>
 $$idf=\log(\frac{D}{Dw})$$
 <p>其中D为所有的文档数，而Dw为包含该term的文档数。所以就很容易理解IDF了，包含该term的doc越多的话，其idf就越小，反之则越多，至于这里为什么用的是对数，其实跟信息论里面的互信息有关系，吴军老师在《数学之美》中有一个清晰的解释，强烈推荐看看这本书。</p>
