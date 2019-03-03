@@ -149,7 +149,7 @@ struct shim_worker_struct{
  int (*probe_tags)(uint64_t *buf, shim * myshim);
 };
 </pre>
-<img src="/static/blogs/2018/03/img/shim_core.PNG" alt="">
+<img src="/static/blogs/2018/03/img/shim_core.png" alt="">
 <p>作者在shim中提供了一些基本的函数，如relax_cpu释放cpu控制权，作用相当于机器指令中的pause， 另外rdtsc用来获取当前的周期数，get_cpuid用来获取cpuid。主要部分还是对于perfmon库提供的函数进行的封装。</p>
 <h3><a data-uk-modal="{target:'#category-id'}">shim初始化</a></h3>
 
@@ -158,7 +158,7 @@ struct shim_worker_struct{
 <h3><a data-uk-modal="{target:'#category-id'}">数据读取及可信赖度</a></h3>
 
 <p>在函数shim_read_counters中shim两次调用rdtsc进行测量当前的周期数，并在两次读取中间进行各种事件的测量工作，若前后两次read_counters的end之差值和begin之差值在可信赖范围内相同，则可认为shim对测量没有影响。</p>
-<img src="/static/blogs/2018/03/img/shim_core2.PNG" alt="">
+<img src="/static/blogs/2018/03/img/shim_core2.png" alt="">
 <h3><a data-uk-modal="{target:'#category-id'}">example</a></h3>
 
 <p>利用<code>gcc *.c -o shim -lpthread -lpfm</code>对如下示例程序进行编译执行，可进行测试</p>
